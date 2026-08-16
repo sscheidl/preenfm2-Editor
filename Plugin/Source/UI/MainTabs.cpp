@@ -57,9 +57,9 @@ MainTabs::MainTabs ()
     tabbedComponent.reset (new TabbedComponent (TabbedButtonBar::TabsAtTop));
     addAndMakeVisible (tabbedComponent.get());
     tabbedComponent->setTabBarDepth (30);
-    tabbedComponent->addTab (TRANS("Engine"), Colour (0xff083543), new PanelEngine(), true);
-    tabbedComponent->addTab (TRANS("Modulation"), Colour (0xff083543), new PanelModulation(), true);
-    tabbedComponent->addTab (TRANS("Arp & Filter"), Colour (0xff083543), new PanelArpAndFilter(), true);
+    tabbedComponent->addTab (TRANS("Engine"), Colour (0xff111a24), new PanelEngine(), true);
+    tabbedComponent->addTab (TRANS("Modulation"), Colour (0xff111a24), new PanelModulation(), true);
+    tabbedComponent->addTab (TRANS("Arp & Filter"), Colour (0xff111a24), new PanelArpAndFilter(), true);
     tabbedComponent->setCurrentTabIndex (0);
 
     pullButton.reset (new TextButton ("pull button"));
@@ -119,15 +119,12 @@ MainTabs::MainTabs ()
     addAndMakeVisible (deviceButton.get());
     deviceButton->setButtonText (TRANS("Midi"));
     deviceButton->addListener (this);
-    deviceButton->setColour (TextButton::buttonColourId, Colour (0x005c5da4));
-    deviceButton->setColour (TextButton::buttonOnColourId, Colours::black);
 
     versionButton.reset (new HyperlinkButton (TRANS("v?.?.?"),
                                               URL ("https://github.com/Ixox/preenfm2Controller")));
     addAndMakeVisible (versionButton.get());
     versionButton->setTooltip (TRANS("https://github.com/Ixox/preenfm2Controller"));
     versionButton->setButtonText (TRANS("v?.?.?"));
-    versionButton->setColour (HyperlinkButton::textColourId, Colours::beige);
 
     pfmTypeCombo.reset (new ComboBox ("pfm Type"));
     addAndMakeVisible (pfmTypeCombo.get());
@@ -144,11 +141,7 @@ MainTabs::MainTabs ()
 
 
     //[UserPreSize]
-    // Black background
-    pfmTypeCombo->setColour(ComboBox::backgroundColourId, Colours::black);
-    pfmTypeCombo->setColour(ComboBox::textColourId, Colours::aqua);
     pfmTypeCombo->setSelectedId(2);
-    midiChannelCombo->setColour(ComboBox::backgroundColourId, Colours::black);
 
 	midiChannelCombo->setSelectedId(1);
     pfmTypeCombo->setSelectedId(1);
@@ -195,7 +188,7 @@ void MainTabs::paint (Graphics& g)
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    g.fillAll (Colour (0xff0b232a));
+    g.fillAll (Colour (0xff0b1117));
 
     //[UserPaint] Add your own custom painting code here..
     //[/UserPaint]

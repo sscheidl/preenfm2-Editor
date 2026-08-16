@@ -210,6 +210,9 @@ PanelModulation::PanelModulation ()
 		lfoShape[k]->addItem("Triangle", 3);
 		lfoShape[k]->addItem("Square", 4);
 		lfoShape[k]->addItem("Random", 5);
+		lfoShape[k]->addItem("Brownian", 6);
+		lfoShape[k]->addItem("Wandering", 7);
+		lfoShape[k]->addItem("Flow", 8);
 		lfoShape[k]->setScrollWheelEnabled(true);
 		lfoShape[k]->setSelectedId(1);
 		lfoShape[k]->addListener(this);

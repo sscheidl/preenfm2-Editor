@@ -48,7 +48,7 @@ Pfm2AudioProcessor::Pfm2AudioProcessor()
 
     // Algo
     int nrpmParam = PREENFM2_NRPN_ALGO;
-    newParam = new MidifiedFloatParameter(String("Algo"), nrpmParam, 1, 1, 28, 1);
+    newParam = new MidifiedFloatParameter(String("Algo"), nrpmParam, 1, 1, 32, 1);
     addMidifiedParameter(newParam);
     nrpmIndex[nrpmParam] = newParam->getParamIndex();
 
@@ -199,7 +199,7 @@ Pfm2AudioProcessor::Pfm2AudioProcessor()
         //        lfoShape[k]->addItem("Square", 4);
         //        lfoShape[k]->addItem("Random", 5);
         nrpmParam = PREENFM2_NRPN_LFO1_SHAPE + k * 4;
-        newParam = new MidifiedFloatParameter(String("LFO" + String(k + 1) + " Shape"), nrpmParam, 1, 1, 5, 1);
+        newParam = new MidifiedFloatParameter(String("LFO" + String(k + 1) + " Shape"), nrpmParam, 1, 1, 8, 1);
         addMidifiedParameter(newParam);
         nrpmIndex[nrpmParam] = newParam->getParamIndex();
 
@@ -533,7 +533,7 @@ Pfm2AudioProcessor::~Pfm2AudioProcessor()
 //==============================================================================
 const String Pfm2AudioProcessor::getName() const
 {
-    return "preenfm editor"; // JucePlugin_Name;
+    return JucePlugin_Name;
 }
 
 
@@ -652,7 +652,8 @@ AudioProcessorEditor* Pfm2AudioProcessor::createEditor()
     pfm2Editor->setMidiOutBuffer(&midiOutBuffer);
     pfm2Editor->setPresetName(presetName);
     if (editorWidth > 0 && editorHeight > 0) {
-        pfm2Editor->setSize(editorWidth, editorHeight);
+        pfm2Editor->setSize(jmax(editorWidth, Pfm2AudioProcessorEditor::minimumWidth),
+            jmax(editorHeight, Pfm2AudioProcessorEditor::minimumHeight));
     }
 
     return pfm2Editor;
@@ -793,7 +794,8 @@ void Pfm2AudioProcessor::setStateInformation(const void* data, int sizeInBytes, 
 
             if (pfm2Editor != nullptr) {
                 if (editorWidth > 0 && editorHeight > 0) {
-                    pfm2Editor->setSize(editorWidth, editorHeight);
+                    pfm2Editor->setSize(jmax(editorWidth, Pfm2AudioProcessorEditor::minimumWidth),
+                        jmax(editorHeight, Pfm2AudioProcessorEditor::minimumHeight));
                 }
                 pfm2Editor->setPfmType(pfmType);
             }
@@ -1032,11 +1034,9 @@ void Pfm2AudioProcessor::sendMidiForParameter(int paramIndex, int nrpnValue, int
         midifiedFP->setValueFromNrpn(nrpnValue);
         // Notify host we're not in the message thread so :
         float paramValue = midifiedFP->getValue();
-        MessageManager::callAsync(
-            [=]() {
-            sendParamChangeMessageToListeners(paramIndex, paramValue);
-        }
-        );
+        MessageManager::callAsync([midifiedFP, paramValue]() {
+            midifiedFP->sendValueChangedMessageToListeners(paramValue);
+        });
 
         parameterUpdatedForUI(paramIndex);
     }
@@ -1075,7 +1075,7 @@ void Pfm2AudioProcessor::onParameterUpdated(AudioProcessorParameter *parameter) 
         }
         else {
             // Notify host
-            sendParamChangeMessageToListeners(index, midifiedFP->getValue());
+            midifiedFP->sendValueChangedMessageToListeners(midifiedFP->getValue());
 
             // send nrpn
             midifiedFP->addNrpn(midiOutBuffer, currentMidiChannel);

@@ -25,13 +25,14 @@
 Pfm2AudioProcessorEditor::Pfm2AudioProcessorEditor(Pfm2AudioProcessor* ownerFilter)
 	: AudioProcessorEditor(ownerFilter)
 {
-    setResizable(true, true);
 	this->ownerFilter = ownerFilter;
 	addAndMakeVisible(mainTabs = new MainTabs());
 	mainTabs->buildParameters(getAudioProcessor());
+	setResizable(true, true);
+	setResizeLimits(minimumWidth, minimumHeight, 4096, 4096);
 	// This is where our plugin's editor size is set.
 
-	setSize(1000, 750);
+	setSize(defaultWidth, defaultHeight);
 
 	startTimer(100);
 	uiOutOfSync = false;
@@ -50,7 +51,8 @@ void Pfm2AudioProcessorEditor::paint(Graphics& g)
 
 
 void Pfm2AudioProcessorEditor::resized() {
-	mainTabs->setSize(getWidth(), getHeight());
+	if (mainTabs != nullptr)
+		mainTabs->setBounds(getLocalBounds());
 }
 
 

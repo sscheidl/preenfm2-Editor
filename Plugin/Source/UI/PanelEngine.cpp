@@ -75,6 +75,10 @@ struct AlgoInformation  algoInformation[] = {
 		{ 6, 2, 4},   // ALG26
 		{ 6, 0, 6},   // ALG27
 		{ 6, 1, 5},   // ALG28
+		{ 4, 2, 2},   // ALG29
+		{ 4, 4, 2},   // ALG30
+		{ 4, 3, 3},   // ALG31
+		{ 4, 4, 1},   // ALG32
 };
 
 int algoOpInformation[][NUMBER_OF_OPERATORS] = {
@@ -106,7 +110,159 @@ int algoOpInformation[][NUMBER_OF_OPERATORS] = {
 		{1,1,1,2,2,1}, // ALGO26
 		{1,1,1,1,1,1}, // ALGO27
 		{1,1,1,1,1,2}, // ALGO28
+		{1,1,2,0,0,0}, // ALGO29
+		{1,1,2,2,0,0}, // ALGO30
+		{1,1,1,2,0,0}, // ALGO31
+		{1,2,2,2,0,0}, // ALGO32
 };
+
+namespace
+{
+constexpr int legacyAlgorithmImageCount = 28;
+
+struct AlgorithmNode
+{
+	int op;
+	int position;
+	bool carrier;
+	bool sync;
+};
+
+struct AlgorithmEdge
+{
+	int source;
+	int destination;
+	bool sync;
+};
+
+struct AlgorithmDiagram
+{
+	const AlgorithmNode* nodes;
+	int nodeCount;
+	const AlgorithmEdge* edges;
+	int edgeCount;
+};
+
+const AlgorithmNode algo29Nodes[] = {
+	{ 1, 10, true, false }, { 2, 12, true, false },
+	{ 3, 4, false, true }, { 4, 3, false, false }
+};
+const AlgorithmEdge algo29Edges[] = {
+	{ 3, 1, true }, { 4, 2, false }, { 4, 3, false }, { 4, 4, false }
+};
+
+const AlgorithmNode algo30Nodes[] = {
+	{ 1, 10, true, false }, { 2, 12, true, false },
+	{ 3, 4, false, true }, { 4, 3, false, false }
+};
+const AlgorithmEdge algo30Edges[] = {
+	{ 3, 1, true }, { 3, 2, true }, { 4, 1, false },
+	{ 4, 2, false }, { 4, 4, false }
+};
+
+const AlgorithmNode algo31Nodes[] = {
+	{ 1, 10, true, false }, { 2, 11, true, false },
+	{ 3, 12, true, false }, { 4, 5, false, true }
+};
+const AlgorithmEdge algo31Edges[] = {
+	{ 4, 1, true }, { 4, 2, true }, { 4, 3, true }
+};
+
+const AlgorithmNode algo32Nodes[] = {
+	{ 1, 11, true, false }, { 2, 4, false, false },
+	{ 3, 2, false, false }, { 4, 6, false, true }
+};
+const AlgorithmEdge algo32Edges[] = {
+	{ 2, 1, false }, { 3, 1, false }, { 4, 1, true },
+	{ 3, 4, false }, { 3, 3, false }
+};
+
+const AlgorithmDiagram vosimAlgorithms[] = {
+	{ algo29Nodes, 4, algo29Edges, 4 },
+	{ algo30Nodes, 4, algo30Edges, 5 },
+	{ algo31Nodes, 4, algo31Edges, 3 },
+	{ algo32Nodes, 4, algo32Edges, 5 }
+};
+
+Point<float> pointForAlgorithmPosition(int position)
+{
+	return { 38.0f + static_cast<float>((position - 1) % 3) * 88.0f,
+		28.0f + static_cast<float>((position - 1) / 3) * 53.0f };
+}
+
+Image createVosimAlgorithmImage(int algorithmNumber)
+{
+	const auto& diagram = vosimAlgorithms[jlimit(0, 3, algorithmNumber - 29)];
+	Image image(Image::ARGB, 252, 220, true);
+	Graphics g(image);
+
+	const Colour normalConnection(0xff35c2c8);
+	const Colour syncConnection(0xffb482ff);
+	const Colour carrierFill(0xff175c63);
+	const Colour modulatorFill(0xff173a55);
+	const Colour syncFill(0xff4b326d);
+	const Colour outlineColour(0xff9db0bd);
+
+	auto findNode = [&diagram](int op) -> const AlgorithmNode*
+	{
+		for (int i = 0; i < diagram.nodeCount; ++i)
+			if (diagram.nodes[i].op == op)
+				return &diagram.nodes[i];
+		return nullptr;
+	};
+
+	for (int i = 0; i < diagram.edgeCount; ++i)
+	{
+		const auto& edge = diagram.edges[i];
+		const auto* sourceNode = findNode(edge.source);
+		const auto* destinationNode = findNode(edge.destination);
+		if (sourceNode == nullptr || destinationNode == nullptr)
+			continue;
+
+		const auto source = pointForAlgorithmPosition(sourceNode->position);
+		const auto destination = pointForAlgorithmPosition(destinationNode->position);
+		g.setColour(edge.sync ? syncConnection : normalConnection);
+
+		if (edge.source == edge.destination)
+		{
+			Path feedback;
+			feedback.startNewSubPath(source.x + 17.0f, source.y);
+			feedback.lineTo(source.x + 28.0f, source.y);
+			feedback.lineTo(source.x + 28.0f, source.y - 24.0f);
+			feedback.lineTo(source.x, source.y - 24.0f);
+			feedback.lineTo(source.x, source.y - 17.0f);
+			g.strokePath(feedback, PathStrokeType(2.0f, PathStrokeType::curved,
+				PathStrokeType::rounded));
+		}
+		else
+		{
+			const Line<float> line(source.translated(0.0f, 17.0f),
+				destination.translated(0.0f, -17.0f));
+			g.drawArrow(line, 2.0f, 8.0f, 7.0f);
+		}
+	}
+
+	for (int i = 0; i < diagram.nodeCount; ++i)
+	{
+		const auto& node = diagram.nodes[i];
+		const auto centre = pointForAlgorithmPosition(node.position);
+		const Rectangle<float> bounds(centre.x - 17.0f, centre.y - 17.0f, 34.0f, 34.0f);
+		g.setColour(node.carrier ? carrierFill : (node.sync ? syncFill : modulatorFill));
+		g.fillRoundedRectangle(bounds, 6.0f);
+		g.setColour(node.carrier ? normalConnection : (node.sync ? syncConnection : outlineColour));
+		g.drawRoundedRectangle(bounds, 6.0f, 2.0f);
+		g.setColour(Colours::white);
+		g.setFont(Font(15.0f, Font::bold));
+		g.drawText(String(node.op), bounds.toNearestInt(), Justification::centred, false);
+	}
+
+	g.setColour(syncConnection.withAlpha(0.9f));
+	g.setFont(Font(12.0f, Font::bold));
+	g.drawText("VOSIM " + String(algorithmNumber), 0, 201, image.getWidth(), 18,
+		Justification::centred, false);
+	return image;
+}
+}
 
 const char* algo4_pngs[] = {
 		 AlgoPNG::algo1_png, AlgoPNG::algo2_png, AlgoPNG::algo3_png, AlgoPNG::algo4_png, AlgoPNG::algo5_png, AlgoPNG::algo6_png,
@@ -313,11 +469,14 @@ PanelEngine::PanelEngine ()
 	algoChooser->setDoubleClickReturnValue(true, 1.0f);
 	algoChooser->addListener(this);
 
-	for (int a = 0; a < NUMBER_OF_ALGO; a++) {
+	for (int a = 0; a < legacyAlgorithmImageCount; a++) {
 		algoImages[a] = ImageFileFormat::loadFrom(algo4_pngs[a], algo4_png_sizes[a]);
 	}
-	addAndMakeVisible(algoDrawableImage = new DrawableImage());
-	algoDrawableImage->setImage(algoImages[0]);
+	for (int a = legacyAlgorithmImageCount; a < NUMBER_OF_ALGO; a++) {
+		algoImages[a] = createVosimAlgorithmImage(a + 1);
+	}
+	addAndMakeVisible(algoDrawableImage = new ImageComponent());
+	algoDrawableImage->setImage(algoImages[0], RectanglePlacement::centred | RectanglePlacement::onlyReduceInSize);
 
 	addAndMakeVisible(algoChooserLabel = new Label("algo label", "Algo"));
 	algoChooserLabel->setJustificationType(Justification::centredTop);
@@ -602,11 +761,12 @@ void PanelEngine::resizeAlgoDrawableImage() {
 	float height = (float)proportionOfHeight(0.31f);
 
 	juce::Rectangle<float> rect = juce::Rectangle<float>(left, top, width, height);
-	algoDrawableImage->setTransformToFit(rect, RectanglePlacement::centred | RectanglePlacement::onlyReduceInSize);
+	algoDrawableImage->setBounds(rect.toNearestInt());
 
 }
 
 void PanelEngine::newAlgo(int algoNumber) {
+	algoNumber = jlimit(0, NUMBER_OF_ALGO - 1, algoNumber);
 	int numberOfMixer = algoInformation[algoNumber].mix;
 	for (int m = 0; m < 6; m++) {
 		bool enable = m < numberOfMixer;
@@ -636,7 +796,7 @@ void PanelEngine::newAlgo(int algoNumber) {
 		// Only carrier operators have loop
 		enveloppe[o]->setOperatorType(algoOpInformation[algoNumber][o]);
 	}
-	algoDrawableImage->setImage(algoImages[algoNumber]);
+	algoDrawableImage->setImage(algoImages[algoNumber], RectanglePlacement::centred | RectanglePlacement::onlyReduceInSize);
 	resizeAlgoDrawableImage();
 }
 
@@ -898,6 +1058,7 @@ void PanelEngine::sliderDragEnded(Slider* slider) {
 	pfmType = type;
 
 	bool isPreenfm2 = pfmType == TYPE_PREENFM2;
+	algoChooser->setRange(1, NUMBER_OF_ALGO, 1);
 	hideTotallyComponent(IMKnob[5].get(), isPreenfm2);
 	hideTotallyComponent(IMNumber[5].get(), isPreenfm2);
 	hideTotallyComponent(IMVelocityKnob[5].get(), isPreenfm2);

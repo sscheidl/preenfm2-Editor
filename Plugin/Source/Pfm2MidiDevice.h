@@ -54,7 +54,7 @@ public:
 
 private:
 	PropertiesFile* midiPropertyFile;
-	bool showErrorMEssage;
+	bool showErrorMEssage = false;
 	CriticalSection messageLock;
 	std::unique_ptr<MidiOutput> pfm2MidiOutput;
 	String currentMidiOutputDevice;

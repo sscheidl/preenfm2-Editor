@@ -20,7 +20,7 @@
 #include "EnveloppeFree1.h"
 
 
-#include "../JuceLibraryCode/JuceHeader.h"
+#include "JuceHeader.h"
 #include "Enveloppe.h"
 
 

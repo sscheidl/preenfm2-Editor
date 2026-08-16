@@ -46,7 +46,7 @@
 #define NUMBER_OF_OPERATORS 6
 #define NUMBER_OF_IM 6
 #define NUMBER_OF_MIX 6
-#define NUMBER_OF_ALGO 28
+#define NUMBER_OF_ALGO 32
 
 //[/Headers]
 
@@ -114,7 +114,7 @@ private:
 	ScopedPointer<Slider> IMVelocityKnob[NUMBER_OF_IM];
 	ScopedPointer<Label> algoChooserLabel;
 	ScopedPointer<Slider> algoChooser;
-	ScopedPointer<DrawableImage> algoDrawableImage;
+	ScopedPointer<ImageComponent> algoDrawableImage;
 	Image algoImages[NUMBER_OF_ALGO];
 	ScopedPointer<Label> velocityLabel;
 	ScopedPointer<Slider> velocity;

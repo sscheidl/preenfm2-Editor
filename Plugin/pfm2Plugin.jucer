@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="nWJaEw" name="pfmEditor" projectType="audioplug" version="3.1.4"
+<JUCERPROJECT id="nWJaEw" name="pfmEditor" projectType="audioplug" version="4.0.0"
               bundleIdentifier="com.ixox.preenfmEditor" includeBinaryInAppConfig="1"
               buildVST="1" buildVST3="1" buildAU="1" buildRTAS="0" buildAAX="0"
-              pluginName="preenfm Editor" pluginDesc="preenfm preset editor"
+              pluginName="PreenFM+" pluginDesc="PreenFM+ MIDI editor"
               pluginManufacturer="Ixox" pluginManufacturerCode="Ixox" pluginCode="IxPF"
               pluginChannelConfigs="{1, 1}, {2, 2}" pluginIsSynth="0" pluginWantsMidiIn="1"
               pluginProducesMidiOut="1" pluginSilenceInIsSilenceOut="1" pluginEditorRequiresKeys="0"

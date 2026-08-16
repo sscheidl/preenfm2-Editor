@@ -47,15 +47,15 @@ Pfm2MidiDevice::Pfm2MidiDevice() {
 	pfm2MidiOutput = nullptr;
 	pfm2MidiInput = nullptr;
 
-	StringArray devices = MidiOutput::getDevices();
+	const auto outputDevices = MidiOutput::getAvailableDevices();
 
-	for (int d = 0; d < devices.size(); d++) {
-		DBG("Output : " << devices[d]);
-		if (devices[d] == pfm2OutputDevice) {
-			pfm2MidiOutput = MidiOutput::openDevice(d);
+	for (const auto& device : outputDevices) {
+		DBG("Output : " << device.name);
+		if (device.name == pfm2OutputDevice) {
+			pfm2MidiOutput = MidiOutput::openDevice(device.identifier);
 			if (pfm2MidiOutput.get() != nullptr) {
 				DBG("Output found :)");
-				currentMidiOutputDevice = devices[d];
+				currentMidiOutputDevice = device.name;
 			}
 			else {
 				DBG("Output could not be open)");
@@ -64,14 +64,14 @@ Pfm2MidiDevice::Pfm2MidiDevice() {
 		}
 	}
 
-	devices = MidiInput::getDevices();
-	for (int d = 0; d < devices.size(); d++) {
-		DBG("Input : " << devices[d]);
-		if (devices[d] == pfm2InputDevice) {
-			pfm2MidiInput = MidiInput::openDevice(d, this);
+	const auto inputDevices = MidiInput::getAvailableDevices();
+	for (const auto& device : inputDevices) {
+		DBG("Input : " << device.name);
+		if (device.name == pfm2InputDevice) {
+			pfm2MidiInput = MidiInput::openDevice(device.identifier, this);
 			if (pfm2MidiInput.get() != nullptr) {
 				pfm2MidiInput->start();
-				currentMidiInputDevice = devices[d];
+				currentMidiInputDevice = device.name;
 				DBG("Input found :)");
 			}
 			else {
@@ -133,20 +133,34 @@ void Pfm2MidiDevice::choseNewDevices() {
 		errorMessage.setSize(400, 20);
 		midiWindow.addCustomComponent(&errorMessage);
 
-		StringArray devicesFrom = MidiInput::getDevices();
+		const auto inputDevices = MidiInput::getAvailableDevices();
+		StringArray devicesFrom;
 		devicesFrom.insert(0, "<Select>");
+		for (const auto& device : inputDevices) {
+			devicesFrom.add(device.name);
+		}
 		midiWindow.addComboBox("From", devicesFrom, "Input from preenfm");
 		int currentInput = devicesFrom.indexOf(currentMidiInputDevice);
 		if (currentInput > -1) {
 			midiWindow.getComboBoxComponent("From")->setSelectedId(currentInput + 1);
 		}
+		else {
+			midiWindow.getComboBoxComponent("From")->setSelectedId(1);
+		}
 
-		StringArray devicesTo = MidiOutput::getDevices();
+		const auto outputDevices = MidiOutput::getAvailableDevices();
+		StringArray devicesTo;
 		devicesTo.insert(0, "<Select>");
+		for (const auto& device : outputDevices) {
+			devicesTo.add(device.name);
+		}
 		midiWindow.addComboBox("To", devicesTo, "Output to preenfm");
 		int currentOutput = devicesTo.indexOf(currentMidiOutputDevice);
 		if (currentOutput > -1) {
 			midiWindow.getComboBoxComponent("To")->setSelectedId(currentOutput + 1);
+		}
+		else {
+			midiWindow.getComboBoxComponent("To")->setSelectedId(1);
 		}
 
 		//void addButton(const String &name, int returnValue, const KeyPress &shortcutKey1 = KeyPress(), const KeyPress &shortcutKey2 = KeyPress())
@@ -178,7 +192,7 @@ void Pfm2MidiDevice::choseNewDevices() {
 				int deviceTo = midiWindow.getComboBoxComponent("To")->getSelectedId() - 2;
 				currentMidiOutputDevice = devicesTo[deviceTo + 1];
 
-				pfm2MidiInput = MidiInput::openDevice(deviceFrom, this);
+				pfm2MidiInput = MidiInput::openDevice(inputDevices[deviceFrom].identifier, this);
 				if (pfm2MidiInput.get() != nullptr) {
 					pfm2MidiInput->start();
 				}
@@ -187,7 +201,7 @@ void Pfm2MidiDevice::choseNewDevices() {
 				}
 				// No need to test output if input did not work
 				if (pfm2MidiInput.get() != nullptr) {
-					pfm2MidiOutput = MidiOutput::openDevice(deviceTo);
+					pfm2MidiOutput = MidiOutput::openDevice(outputDevices[deviceTo].identifier);
 					if (pfm2MidiOutput.get() == nullptr) {
 						errorMessage.setText("Output cannot be open", NotificationType::dontSendNotification);
 						// let's close input before rexiting
