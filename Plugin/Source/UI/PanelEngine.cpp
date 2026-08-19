@@ -38,7 +38,6 @@
 */
 
 #include "JuceHeader.h"
-#include "png/AlgoPNG.h"
 #include "SliderPfm2.h"
 //[/Headers]
 
@@ -46,7 +45,7 @@
 
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
-struct AlgoInformation  algoInformation[] = {
+static constexpr AlgoInformation algoInformation[] = {
 		{ 3, 3, 1}, // ALGO1
 		{ 3, 2, 2}, // ALGO2
 		{ 4, 4, 1}, // ALGO3
@@ -75,13 +74,13 @@ struct AlgoInformation  algoInformation[] = {
 		{ 6, 2, 4},   // ALG26
 		{ 6, 0, 6},   // ALG27
 		{ 6, 1, 5},   // ALG28
-		{ 4, 2, 2},   // ALG29
+		{ 4, 3, 2},   // ALG29
 		{ 4, 4, 2},   // ALG30
 		{ 4, 3, 3},   // ALG31
 		{ 4, 4, 1},   // ALG32
 };
 
-int algoOpInformation[][NUMBER_OF_OPERATORS] = {
+static constexpr int algoOpInformation[][NUMBER_OF_OPERATORS] = {
 		{1,2,2,0,0,0}, // ALGO1
 		{1,1,2,0,0,0}, // ALGO2
 		{1,2,2,2,0,0}, // ALGO3
@@ -110,7 +109,7 @@ int algoOpInformation[][NUMBER_OF_OPERATORS] = {
 		{1,1,1,2,2,1}, // ALGO26
 		{1,1,1,1,1,1}, // ALGO27
 		{1,1,1,1,1,2}, // ALGO28
-		{1,1,2,0,0,0}, // ALGO29
+		{1,1,2,2,0,0}, // ALGO29
 		{1,1,2,2,0,0}, // ALGO30
 		{1,1,1,2,0,0}, // ALGO31
 		{1,2,2,2,0,0}, // ALGO32
@@ -118,165 +117,226 @@ int algoOpInformation[][NUMBER_OF_OPERATORS] = {
 
 namespace
 {
-constexpr int legacyAlgorithmImageCount = 28;
-
-struct AlgorithmNode
+struct UnifiedAlgorithmEdge
 {
-	int op;
-	int position;
-	bool carrier;
-	bool sync;
-};
-
-struct AlgorithmEdge
-{
+	int index;
 	int source;
 	int destination;
 	bool sync;
 };
 
-struct AlgorithmDiagram
+struct UnifiedAlgorithm
 {
-	const AlgorithmNode* nodes;
 	int nodeCount;
-	const AlgorithmEdge* edges;
-	int edgeCount;
+	std::vector<UnifiedAlgorithmEdge> edges;
 };
 
-const AlgorithmNode algo29Nodes[] = {
-	{ 1, 10, true, false }, { 2, 12, true, false },
-	{ 3, 4, false, true }, { 4, 3, false, false }
-};
-const AlgorithmEdge algo29Edges[] = {
-	{ 3, 1, true }, { 4, 2, false }, { 4, 3, false }, { 4, 4, false }
-};
-
-const AlgorithmNode algo30Nodes[] = {
-	{ 1, 10, true, false }, { 2, 12, true, false },
-	{ 3, 4, false, true }, { 4, 3, false, false }
-};
-const AlgorithmEdge algo30Edges[] = {
-	{ 3, 1, true }, { 3, 2, true }, { 4, 1, false },
-	{ 4, 2, false }, { 4, 4, false }
-};
-
-const AlgorithmNode algo31Nodes[] = {
-	{ 1, 10, true, false }, { 2, 11, true, false },
-	{ 3, 12, true, false }, { 4, 5, false, true }
-};
-const AlgorithmEdge algo31Edges[] = {
-	{ 4, 1, true }, { 4, 2, true }, { 4, 3, true }
-};
-
-const AlgorithmNode algo32Nodes[] = {
-	{ 1, 11, true, false }, { 2, 4, false, false },
-	{ 3, 2, false, false }, { 4, 6, false, true }
-};
-const AlgorithmEdge algo32Edges[] = {
-	{ 2, 1, false }, { 3, 1, false }, { 4, 1, true },
-	{ 3, 4, false }, { 3, 3, false }
-};
-
-const AlgorithmDiagram vosimAlgorithms[] = {
-	{ algo29Nodes, 4, algo29Edges, 4 },
-	{ algo30Nodes, 4, algo30Edges, 5 },
-	{ algo31Nodes, 4, algo31Edges, 3 },
-	{ algo32Nodes, 4, algo32Edges, 5 }
+const UnifiedAlgorithm unifiedAlgorithms[] = {
+	{ 3, {{1,2,1,false}, {2,3,1,false}, {3,3,2,false}, {6,3,3,false}} },
+	{ 3, {{1,3,1,false}, {2,3,2,false}, {6,3,3,false}} },
+	{ 4, {{1,2,1,false}, {2,3,1,false}, {3,4,1,false}, {4,3,4,false}, {6,3,3,false}} },
+	{ 4, {{1,3,1,false}, {2,4,2,false}, {3,3,2,false}, {4,4,3,false}, {6,4,4,false}} },
+	{ 4, {{1,2,1,false}, {2,3,2,false}, {3,4,3,false}, {4,4,2,false}, {6,4,4,false}} },
+	{ 4, {{1,4,1,false}, {2,4,2,false}, {3,4,3,false}, {6,4,4,false}} },
+	{ 6, {{1,2,1,false}, {2,4,3,false}, {3,6,5,false}, {4,4,6,false}, {6,4,4,false}} },
+	{ 6, {{1,2,1,false}, {2,3,1,false}, {3,4,1,false}, {4,6,5,false}, {6,4,4,false}} },
+	{ 6, {{1,2,1,false}, {2,3,1,false}, {3,5,4,false}, {4,6,5,false}, {6,6,6,false}} },
+	{ 6, {{1,2,1,false}, {2,4,3,false}, {3,5,4,false}, {4,6,5,false}, {6,2,2,false}} },
+	{ 6, {{1,2,1,false}, {2,3,2,false}, {3,5,4,false}, {4,6,5,false}, {6,6,6,false}} },
+	{ 6, {{1,2,1,false}, {2,4,3,false}, {3,6,5,false}, {6,6,6,false}} },
+	{ 6, {{1,2,1,false}, {2,4,3,false}, {3,5,3,false}, {4,6,5,false}, {6,4,4,false}} },
+	{ 6, {{1,2,1,false}, {2,3,2,false}, {3,5,4,false}, {4,6,4,false}, {6,6,6,false}} },
+	{ 6, {{1,2,1,false}, {2,4,3,false}, {3,5,3,false}, {4,6,3,false}, {6,6,6,false}} },
+	{ 6, {{1,2,1,false}, {2,4,3,false}, {3,5,4,false}, {4,6,4,false}, {6,2,2,false}} },
+	{ 6, {{1,2,1,false}, {2,3,1,false}, {3,4,3,false}, {4,5,1,false}, {5,6,5,false}, {6,2,2,false}} },
+	{ 6, {{1,2,1,false}, {2,3,1,false}, {3,4,1,false}, {4,5,4,false}, {5,6,5,false}, {6,3,3,false}} },
+	{ 6, {{1,2,1,false}, {2,3,2,false}, {3,6,4,false}, {4,6,5,false}, {6,6,6,false}} },
+	{ 6, {{1,3,1,false}, {2,3,2,false}, {3,5,4,false}, {4,6,4,false}, {6,3,3,false}} },
+	{ 6, {{1,3,1,false}, {2,3,2,false}, {3,6,4,false}, {4,6,5,false}, {6,3,3,false}} },
+	{ 6, {{1,2,1,false}, {2,6,3,false}, {3,6,4,false}, {4,6,5,false}, {6,6,6,false}} },
+	{ 6, {{1,6,3,false}, {2,6,4,false}, {3,6,5,false}, {6,6,6,false}} },
+	{ 6, {{1,2,1,false}, {2,4,3,false}, {3,5,4,false}, {6,5,5,false}} },
+	{ 6, {{1,4,3,false}, {2,6,5,false}, {6,6,6,false}} },
+	{ 6, {{1,4,3,false}, {2,5,4,false}, {6,5,5,false}} },
+	{ 6, {{6,6,6,false}} },
+	{ 6, {{1,6,5,false}, {6,6,6,false}} },
+	{ 4, {{1,3,1,true}, {2,4,2,false}, {3,4,3,false}, {6,4,4,false}} },
+	{ 4, {{1,3,1,true}, {2,3,2,true}, {3,4,1,false}, {4,4,2,false}, {6,4,4,false}} },
+	{ 4, {{1,4,1,true}, {2,4,2,true}, {3,4,3,true}} },
+	{ 4, {{1,2,1,false}, {2,3,1,false}, {3,4,1,true}, {4,3,4,false}, {6,3,3,false}} }
 };
 
-Point<float> pointForAlgorithmPosition(int position)
+const Colour modulationConnectionColours[] = {
+	Colour(0xff55d6d9), Colour(0xffffb55a), Colour(0xffb783ff),
+	Colour(0xffff7aa8), Colour(0xff8fd46a), Colour(0xff67a7ff)
+};
+
+class UnifiedAlgorithmDiagram final : public Component
 {
-	return { 38.0f + static_cast<float>((position - 1) % 3) * 88.0f,
-		28.0f + static_cast<float>((position - 1) / 3) * 53.0f };
-}
-
-Image createVosimAlgorithmImage(int algorithmNumber)
-{
-	const auto& diagram = vosimAlgorithms[jlimit(0, 3, algorithmNumber - 29)];
-	Image image(Image::ARGB, 252, 220, true);
-	Graphics g(image);
-
-	const Colour normalConnection(0xff35c2c8);
-	const Colour syncConnection(0xffb482ff);
-	const Colour carrierFill(0xff175c63);
-	const Colour modulatorFill(0xff173a55);
-	const Colour syncFill(0xff4b326d);
-	const Colour outlineColour(0xff9db0bd);
-
-	auto findNode = [&diagram](int op) -> const AlgorithmNode*
+public:
+	void setAlgorithm(int newAlgorithm)
 	{
-		for (int i = 0; i < diagram.nodeCount; ++i)
-			if (diagram.nodes[i].op == op)
-				return &diagram.nodes[i];
-		return nullptr;
-	};
+		algorithm = jlimit(0, NUMBER_OF_ALGO - 1, newAlgorithm);
+		repaint();
+	}
 
-	for (int i = 0; i < diagram.edgeCount; ++i)
+	void paint(Graphics& g) override
 	{
-		const auto& edge = diagram.edges[i];
-		const auto* sourceNode = findNode(edge.source);
-		const auto* destinationNode = findNode(edge.destination);
-		if (sourceNode == nullptr || destinationNode == nullptr)
-			continue;
+		const auto& diagram = unifiedAlgorithms[algorithm];
+		auto area = getLocalBounds().toFloat().reduced(12.0f, 8.0f);
+		const bool isVosim = algorithm >= 28;
+		const Colour carrierFill(0xff17636a);
+		const Colour carrierOutline(0xff5edbe0);
+		const Colour modulatorFill(0xff463064);
+		const Colour modulatorOutline(0xffb482ff);
+		const Colour syncConnection(0xffc29aff);
+		const Colour textColour(0xffedf4f7);
 
-		const auto source = pointForAlgorithmPosition(sourceNode->position);
-		const auto destination = pointForAlgorithmPosition(destinationNode->position);
-		g.setColour(edge.sync ? syncConnection : normalConnection);
-
-		if (edge.source == edge.destination)
+		if (isVosim)
 		{
-			Path feedback;
-			feedback.startNewSubPath(source.x + 17.0f, source.y);
-			feedback.lineTo(source.x + 28.0f, source.y);
-			feedback.lineTo(source.x + 28.0f, source.y - 24.0f);
-			feedback.lineTo(source.x, source.y - 24.0f);
-			feedback.lineTo(source.x, source.y - 17.0f);
-			g.strokePath(feedback, PathStrokeType(2.0f, PathStrokeType::curved,
-				PathStrokeType::rounded));
+			g.setColour(syncConnection);
+			g.setFont(Font(FontOptions(13.0f, Font::bold)
+				.withMetricsKind(TypefaceMetricsKind::legacy)));
+			g.drawText("VOSIM", area.removeFromTop(20.0f).toNearestInt(),
+				Justification::centred, false);
 		}
-		else
+
+		std::array<int, NUMBER_OF_OPERATORS> levels{};
+		for (int pass = 0; pass < diagram.nodeCount; ++pass)
+			for (const auto& edge : diagram.edges)
+				if (edge.source != edge.destination)
+					levels[edge.source - 1] = jmax(levels[edge.source - 1],
+						levels[edge.destination - 1] + 1);
+
+		const auto maxLevel = *std::max_element(levels.begin(), levels.begin() + diagram.nodeCount);
+		const bool topLevelHasFeedback = std::any_of(diagram.edges.begin(), diagram.edges.end(),
+			[&](const UnifiedAlgorithmEdge& edge)
+			{
+				return edge.source == edge.destination && levels[edge.source - 1] == maxLevel;
+			});
+		int maxNodesOnLevel = 1;
+		for (int level = 0; level <= maxLevel; ++level)
 		{
-			const Line<float> line(source.translated(0.0f, 17.0f),
-				destination.translated(0.0f, -17.0f));
-			g.drawArrow(line, 2.0f, 8.0f, 7.0f);
+			int nodesOnLevel = 0;
+			for (int op = 0; op < diagram.nodeCount; ++op)
+				if (levels[op] == level)
+					++nodesOnLevel;
+			maxNodesOnLevel = jmax(maxNodesOnLevel, nodesOnLevel);
+		}
+		const float nodeSize = jlimit(21.0f, 30.0f,
+			jmin(area.getWidth() / (static_cast<float>(maxNodesOnLevel) + 2.2f),
+				area.getHeight() / (static_cast<float>(maxLevel) + 2.8f)));
+		const float outputSpace = 12.0f;
+		const float top = area.getY() + nodeSize * (topLevelHasFeedback ? 1.45f : 0.6f);
+		const float bottom = area.getBottom() - nodeSize * 0.5f - outputSpace;
+		const float levelStep = maxLevel > 0 ? (bottom - top) / static_cast<float>(maxLevel) : 0.0f;
+		std::array<Point<float>, NUMBER_OF_OPERATORS> centres{};
+
+		for (int level = 0; level <= maxLevel; ++level)
+		{
+			std::array<int, NUMBER_OF_OPERATORS> operators{};
+			int operatorCount = 0;
+			for (int op = 0; op < diagram.nodeCount; ++op)
+				if (levels[op] == level)
+					operators[operatorCount++] = op;
+
+			for (int i = 0; i < operatorCount; ++i)
+			{
+				const float x = area.getX() + area.getWidth()
+					* static_cast<float>(i + 1) / static_cast<float>(operatorCount + 1);
+				centres[operators[i]] = { x, bottom - level * levelStep };
+			}
+		}
+
+		const auto pointOnNodeBoundary = [nodeSize](Point<float> centre, Point<float> towards)
+		{
+			const auto delta = towards - centre;
+			const float xScale = std::abs(delta.x) > 0.001f
+				? nodeSize * 0.5f / std::abs(delta.x) : std::numeric_limits<float>::max();
+			const float yScale = std::abs(delta.y) > 0.001f
+				? nodeSize * 0.5f / std::abs(delta.y) : std::numeric_limits<float>::max();
+			return centre + delta * jmin(xScale, yScale);
+		};
+
+		for (const auto& edge : diagram.edges)
+		{
+			const auto source = centres[edge.source - 1];
+			const auto destination = centres[edge.destination - 1];
+			const auto connectionColour = modulationConnectionColours[
+				jlimit(0, 5, edge.index - 1)];
+			g.setColour(connectionColour);
+
+			if (edge.source == edge.destination)
+			{
+				const float direction = area.getRight() - source.x >= source.x - area.getX()
+					? 1.0f : -1.0f;
+				const float sideX = source.x + direction * nodeSize * 0.5f;
+				const float laneX = jlimit(area.getX() + 4.0f, area.getRight() - 4.0f,
+					source.x + direction * nodeSize * 0.85f);
+				const float loopTop = source.y - nodeSize * 1.05f;
+				const float nodeTop = source.y - nodeSize * 0.5f;
+				Path feedback;
+				feedback.startNewSubPath(sideX, source.y);
+				feedback.lineTo(laneX, source.y);
+				feedback.lineTo(laneX, loopTop);
+				feedback.lineTo(source.x, loopTop);
+				g.strokePath(feedback, PathStrokeType(1.8f, PathStrokeType::mitered,
+					PathStrokeType::butt));
+				g.drawArrow(Line<float>(source.x, loopTop, source.x, nodeTop),
+					1.8f, 6.0f, 5.0f);
+			}
+			else
+			{
+				const auto start = pointOnNodeBoundary(source, destination);
+				const auto finish = pointOnNodeBoundary(destination, source);
+				const Line<float> connection(start, finish);
+				g.drawArrow(connection, 1.8f, 6.0f, 5.0f);
+
+				if (edge.sync)
+				{
+					Path connectionPath;
+					connectionPath.startNewSubPath(start);
+					connectionPath.lineTo(finish);
+					Path dashedSyncPath;
+					const float dashLengths[] = { 3.5f, 2.5f };
+					PathStrokeType(1.15f, PathStrokeType::curved,
+						PathStrokeType::butt).createDashedStroke(dashedSyncPath,
+							connectionPath, dashLengths, 2);
+					g.setColour(syncConnection);
+					g.fillPath(dashedSyncPath);
+				}
+			}
+		}
+
+		for (int op = 0; op < diagram.nodeCount; ++op)
+		{
+			const bool isCarrier = algoOpInformation[algorithm][op] == 1;
+			const auto centre = centres[op];
+			const Rectangle<float> bounds(centre.x - nodeSize * 0.5f,
+				centre.y - nodeSize * 0.5f, nodeSize, nodeSize);
+			g.setColour(isCarrier ? carrierFill : modulatorFill);
+			g.fillRoundedRectangle(bounds, 4.0f);
+			g.setColour(isCarrier ? carrierOutline : modulatorOutline);
+			g.drawRoundedRectangle(bounds, 4.0f, 1.8f);
+			g.setColour(textColour);
+			g.setFont(Font(FontOptions(
+				jlimit(12.0f, 14.0f, nodeSize * 0.48f), Font::bold)
+				.withMetricsKind(TypefaceMetricsKind::legacy)));
+			g.drawText(String(op + 1), bounds.toNearestInt(), Justification::centred, false);
+
+			if (isCarrier)
+			{
+				const float outputTop = bounds.getBottom();
+				g.setColour(carrierOutline);
+				g.drawLine(centre.x, outputTop + 1.0f, centre.x, outputTop + 9.0f, 1.8f);
+			}
 		}
 	}
 
-	for (int i = 0; i < diagram.nodeCount; ++i)
-	{
-		const auto& node = diagram.nodes[i];
-		const auto centre = pointForAlgorithmPosition(node.position);
-		const Rectangle<float> bounds(centre.x - 17.0f, centre.y - 17.0f, 34.0f, 34.0f);
-		g.setColour(node.carrier ? carrierFill : (node.sync ? syncFill : modulatorFill));
-		g.fillRoundedRectangle(bounds, 6.0f);
-		g.setColour(node.carrier ? normalConnection : (node.sync ? syncConnection : outlineColour));
-		g.drawRoundedRectangle(bounds, 6.0f, 2.0f);
-		g.setColour(Colours::white);
-		g.setFont(Font(15.0f, Font::bold));
-		g.drawText(String(node.op), bounds.toNearestInt(), Justification::centred, false);
-	}
-
-	g.setColour(syncConnection.withAlpha(0.9f));
-	g.setFont(Font(12.0f, Font::bold));
-	g.drawText("VOSIM " + String(algorithmNumber), 0, 201, image.getWidth(), 18,
-		Justification::centred, false);
-	return image;
+private:
+	int algorithm = 0;
+};
 }
-}
-
-const char* algo4_pngs[] = {
-		 AlgoPNG::algo1_png, AlgoPNG::algo2_png, AlgoPNG::algo3_png, AlgoPNG::algo4_png, AlgoPNG::algo5_png, AlgoPNG::algo6_png,
-		 AlgoPNG::algo7_png, AlgoPNG::algo8_png, AlgoPNG::algo9_png, AlgoPNG::algo10_png, AlgoPNG::algo11_png, AlgoPNG::algo12_png,
-		 AlgoPNG::algo13_png, AlgoPNG::algo14_png, AlgoPNG::algo15_png, AlgoPNG::algo16_png, AlgoPNG::algo17_png, AlgoPNG::algo18_png,
-		 AlgoPNG::algo19_png, AlgoPNG::algo20_png, AlgoPNG::algo21_png, AlgoPNG::algo22_png, AlgoPNG::algo23_png, AlgoPNG::algo24_png,
-		 AlgoPNG::algo25_png, AlgoPNG::algo26_png, AlgoPNG::algo27_png, AlgoPNG::algo28_png };
-
-const int algo4_png_sizes[] = {
-		 AlgoPNG::algo1_pngSize, AlgoPNG::algo2_pngSize, AlgoPNG::algo3_pngSize, AlgoPNG::algo4_pngSize, AlgoPNG::algo5_pngSize, AlgoPNG::algo6_pngSize,
-		 AlgoPNG::algo7_pngSize, AlgoPNG::algo8_pngSize, AlgoPNG::algo9_pngSize, AlgoPNG::algo10_pngSize, AlgoPNG::algo11_pngSize, AlgoPNG::algo12_pngSize,
-		 AlgoPNG::algo13_pngSize, AlgoPNG::algo14_pngSize, AlgoPNG::algo15_pngSize, AlgoPNG::algo16_pngSize, AlgoPNG::algo17_pngSize, AlgoPNG::algo18_pngSize,
-		 AlgoPNG::algo19_pngSize, AlgoPNG::algo20_pngSize, AlgoPNG::algo21_pngSize, AlgoPNG::algo22_pngSize, AlgoPNG::algo23_pngSize, AlgoPNG::algo24_pngSize,
-		 AlgoPNG::algo25_pngSize, AlgoPNG::algo26_pngSize, AlgoPNG::algo27_pngSize, AlgoPNG::algo28_pngSize };
 //[/MiscUserDefs]
 
 //==============================================================================
@@ -292,27 +352,27 @@ PanelEngine::PanelEngine ()
                                                    juce::String()));
     addAndMakeVisible (operatorGroup.get());
     operatorGroup->setTextLabelPosition (juce::Justification::centredLeft);
-    operatorGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff749fad));
+    operatorGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff526a7c));
     operatorGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff749fad));
 
     mixerGroup.reset (new juce::GroupComponent ("mixer group",
                                                 TRANS("Mixer")));
     addAndMakeVisible (mixerGroup.get());
     mixerGroup->setTextLabelPosition (juce::Justification::centredLeft);
-    mixerGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff749fad));
-    mixerGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff749fad));
+    mixerGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff35aeb4));
+    mixerGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff69cdd1));
 
     imGroup.reset (new juce::GroupComponent ("IM group",
                                              TRANS("Modulation indexes")));
     addAndMakeVisible (imGroup.get());
     imGroup->setTextLabelPosition (juce::Justification::centredLeft);
-    imGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff749fad));
-    imGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff749fad));
+    imGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff7383c5));
+    imGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff9da9e0));
 
 
     //[UserPreSize]
 	for (int k = 0; k < NUMBER_OF_MIX; k++) {
-		addAndMakeVisible(mixKnob[k] = new SliderPfm2("Mix " + String(k + 1)));
+		addAndMakeVisible((mixKnob[k] = std::make_unique<SliderPfm2>("Mix " + String(k + 1))).get());
 		mixKnob[k]->setRange(0, 1, .01f);
 		mixKnob[k]->setSliderStyle(Slider::RotaryVerticalDrag);
 		mixKnob[k]->setTextBoxStyle(Slider::TextBoxBelow, false, 40, 16);
@@ -320,7 +380,7 @@ PanelEngine::PanelEngine ()
 		mixKnob[k]->setValue(1.0f, dontSendNotification);
 		mixKnob[k]->addListener(this);
 
-		addAndMakeVisible(panKnob[k] = new SliderPfm2("Pan " + String(k + 1)));
+		addAndMakeVisible((panKnob[k] = std::make_unique<SliderPfm2>("Pan " + String(k + 1))).get());
 		panKnob[k]->setRange(-1, 1, .01f);
 		panKnob[k]->setSliderStyle(Slider::LinearHorizontal);
 		panKnob[k]->setTextBoxStyle(Slider::NoTextBox, false, 40, 20);
@@ -328,18 +388,20 @@ PanelEngine::PanelEngine ()
 		panKnob[k]->setDoubleClickReturnValue(true, 0.0f);
 		panKnob[k]->addListener(this);
 
-		addAndMakeVisible(mixLabel[k] = new Label(String("mix label ") + String(k + 1), String("Mix ") + String(k + 1)));
+		addAndMakeVisible((mixLabel[k] = std::make_unique<Label>(String("mix label ") + String(k + 1), String("Mix ") + String(k + 1))).get());
 		mixLabel[k]->setJustificationType(Justification::centred);
 	}
 
 	for (int k = 0; k < NUMBER_OF_IM; k++) {
 		if (k < (NUMBER_OF_IM - 1)) {
-			addAndMakeVisible(IMNumber[k] = new Label("IM Label" + String(k + 1), String("IM") + String(k + 1)));
+			addAndMakeVisible((IMNumber[k] = std::make_unique<Label>("IM Label" + String(k + 1), String("IM") + String(k + 1))).get());
 		} else {
-			addAndMakeVisible(IMNumber[k] = new Label("IM Label" + String(k + 1), String("Feedback")));
+			addAndMakeVisible((IMNumber[k] = std::make_unique<Label>("IM Label" + String(k + 1), String("Feedback"))).get());
 		}
+		IMNumber[k]->setColour(Label::textColourId,
+			modulationConnectionColours[jlimit(0, 5, k)]);
 
-		addAndMakeVisible(IMKnob[k] = new SliderPfm2("IM " + String(k + 1)));
+		addAndMakeVisible((IMKnob[k] = std::make_unique<SliderPfm2>("IM " + String(k + 1))).get());
 		IMKnob[k]->setRange(0, k < (NUMBER_OF_IM - 1) ? 16 : 1, .01f);
 		IMKnob[k]->setSliderStyle(Slider::RotaryVerticalDrag);
 		IMKnob[k]->setTextBoxStyle(Slider::TextBoxLeft, false, 40, 16);
@@ -347,7 +409,7 @@ PanelEngine::PanelEngine ()
 		IMKnob[k]->setValue(1.0f, dontSendNotification);
 		IMKnob[k]->addListener(this);
 
-		addAndMakeVisible(IMVelocityKnob[k] = new SliderPfm2("IM Velocity " + String(k + 1)));
+		addAndMakeVisible((IMVelocityKnob[k] = std::make_unique<SliderPfm2>("IM Velocity " + String(k + 1))).get());
 		IMVelocityKnob[k]->setRange(0, k < (NUMBER_OF_IM - 1) ? 16 : 1, .01f);
 		IMVelocityKnob[k]->setSliderStyle(Slider::RotaryVerticalDrag);
 		IMVelocityKnob[k]->setTextBoxStyle(Slider::TextBoxLeft, false, 40, 16);
@@ -357,35 +419,35 @@ PanelEngine::PanelEngine ()
 	}
 
 
-	addAndMakeVisible(IMLabel = new Label("IM Label", "Main"));
+	addAndMakeVisible((IMLabel = std::make_unique<Label>("IM Label", "Main")).get());
 	IMLabel->setJustificationType(Justification::centredTop);
-	addAndMakeVisible(IMVelocityLabel = new Label("IM Velocity Label", "Velocity"));
+	addAndMakeVisible((IMVelocityLabel = std::make_unique<Label>("IM Velocity Label", "Velocity")).get());
 	IMVelocityLabel->setJustificationType(Justification::centredTop);
 
-	addAndMakeVisible(envCopyButton = new TextButton("Copy"));
+	addAndMakeVisible((envCopyButton = std::make_unique<TextButton>("Copy")).get());
 	envCopyButton->setColour(TextButton::buttonColourId, Colour::fromRGBA(150, 150, 150, 50));
 	envCopyButton->setColour(TextButton::buttonOnColourId, Colour::fromRGBA(150, 150, 150, 150));
 	envCopyButton->addListener(this);
-	addAndMakeVisible(envPasteButton = new TextButton("Paste"));
+	addAndMakeVisible((envPasteButton = std::make_unique<TextButton>("Paste")).get());
 	envPasteButton->setColour(TextButton::buttonColourId, Colour::fromRGBA(150, 150, 150, 50));
 	envPasteButton->setColour(TextButton::buttonOnColourId, Colour::fromRGBA(150, 150, 150, 150));
 	envPasteButton->addListener(this);
 
 
 	for (int k = 0; k < NUMBER_OF_OPERATORS; k++) {
-		enveloppe[k] = new Enveloppe();
+		enveloppe[k] = std::make_unique<Enveloppe>();
 		enveloppe[k]->setName("Op" + String(k + 1) + " Env");
 
-		enveloppeButton[k] = new TextButton("enveloppe button");
+		enveloppeButton[k] = std::make_unique<TextButton>("enveloppe button");
 		enveloppeButton[k]->setButtonText("Op" + String(k + 1));
 
 		enveloppeButton[k]->setClickingTogglesState(true);
 		enveloppeButton[k]->setRadioGroupId(4242);
 		enveloppeButton[k]->setConnectedEdges((k != 0 ? Button::ConnectedOnLeft : 0) | (k != NUMBER_OF_OPERATORS - 1 ? Button::ConnectedOnRight : 0));
 		enveloppeButton[k]->addListener(this);
-		addAndMakeVisible(enveloppeButton[k]);
+		addAndMakeVisible(enveloppeButton[k].get());
 
-		opShape[k] = new ComboBox("Op" + String(k + 1) + " Shape");
+		opShape[k] = std::make_unique<ComboBox>("Op" + String(k + 1) + " Shape");
 		opShape[k]->setJustificationType(Justification::centred);
 		opShape[k]->setColour(ComboBox::buttonColourId, Colours::blue);
 		opShape[k]->addItem("Off", 8);
@@ -407,7 +469,7 @@ PanelEngine::PanelEngine ()
 		opShape[k]->setEditableText(false);
 		opShape[k]->addListener(this);
 
-		opFrequencyType[k] = new ComboBox("Op" + String(k + 1) + " Freq Type");
+		opFrequencyType[k] = std::make_unique<ComboBox>("Op" + String(k + 1) + " Freq Type");
 		opFrequencyType[k]->setEditableText(false);
 		opFrequencyType[k]->setJustificationType(Justification::centred);
 		opFrequencyType[k]->setColour(ComboBox::buttonColourId, Colours::blue);
@@ -418,14 +480,14 @@ PanelEngine::PanelEngine ()
 		opFrequencyType[k]->setSelectedId(1);
 		opFrequencyType[k]->addListener(this);
 
-		opFrequency[k] = new SliderPfm2Always2Decimals("Op" + String(k + 1) + " Frequency");
+		opFrequency[k] = std::make_unique<SliderPfm2Always2Decimals>("Op" + String(k + 1) + " Frequency");
 		opFrequency[k]->setRange(0, 16, 1.0f / 12.0f);
 		opFrequency[k]->setSliderStyle(Slider::RotaryVerticalDrag);
 		opFrequency[k]->setTextBoxStyle(Slider::TextBoxBelow, false, 60, 16);
 		opFrequency[k]->setDoubleClickReturnValue(true, 1.0f);
 		opFrequency[k]->addListener(this);
 
-		opFrequencyFineTune[k] = new SliderPfm2("Op" + String(k + 1) + " Fine Tune");
+		opFrequencyFineTune[k] = std::make_unique<SliderPfm2>("Op" + String(k + 1) + " Fine Tune");
 		opFrequencyFineTune[k]->setRange(-9.0f, 9.0f, .01f);
 		opFrequencyFineTune[k]->setSliderStyle(Slider::RotaryVerticalDrag);
 		opFrequencyFineTune[k]->setTextBoxStyle(Slider::TextBoxBelow, false, 40, 16);
@@ -433,35 +495,35 @@ PanelEngine::PanelEngine ()
 		opFrequencyFineTune[k]->addListener(this);
 
 		if (k == 0) {
-			addAndMakeVisible(enveloppe[k]);
-			addAndMakeVisible(opShape[k]);
-			addAndMakeVisible(opFrequencyType[k]);
-			addAndMakeVisible(opFrequency[k]);
-			addAndMakeVisible(opFrequencyFineTune[k]);
+			addAndMakeVisible(enveloppe[k].get());
+			addAndMakeVisible(opShape[k].get());
+			addAndMakeVisible(opFrequencyType[k].get());
+			addAndMakeVisible(opFrequency[k].get());
+			addAndMakeVisible(opFrequencyFineTune[k].get());
 		}
 		else {
-			addChildComponent(enveloppe[k]);
-			addChildComponent(opShape[k]);
-			addChildComponent(opFrequencyType[k]);
-			addChildComponent(opFrequency[k]);
-			addChildComponent(opFrequencyFineTune[k]);
+			addChildComponent(enveloppe[k].get());
+			addChildComponent(opShape[k].get());
+			addChildComponent(opFrequencyType[k].get());
+			addChildComponent(opFrequency[k].get());
+			addChildComponent(opFrequencyFineTune[k].get());
 		}
 	}
 	enveloppeButton[0]->setToggleState(true, sendNotification);
 
-	addAndMakeVisible(opShapeLabel = new Label("op shapelabel", "Shape"));
+	addAndMakeVisible((opShapeLabel = std::make_unique<Label>("op shapelabel", "Shape")).get());
 	opShapeLabel->setJustificationType(Justification::centredTop);
 
-	addAndMakeVisible(opFrequencyTypeLabel = new Label("op frequency type", "Follows"));
+	addAndMakeVisible((opFrequencyTypeLabel = std::make_unique<Label>("op frequency type", "Follows")).get());
 	opFrequencyTypeLabel->setJustificationType(Justification::centredTop);
 
-	addAndMakeVisible(opFrequencyLabel = new Label("op frequency label", "Frequency"));
+	addAndMakeVisible((opFrequencyLabel = std::make_unique<Label>("op frequency label", "Frequency")).get());
 	opFrequencyLabel->setJustificationType(Justification::centredTop);
 
-	addAndMakeVisible(opFrequencyFineTuneLabel = new Label("op frequency FT label", "Fine Tune"));
+	addAndMakeVisible((opFrequencyFineTuneLabel = std::make_unique<Label>("op frequency FT label", "Fine Tune")).get());
 	opFrequencyFineTuneLabel->setJustificationType(Justification::centredTop);
 
-	addAndMakeVisible(algoChooser = new SliderPfm2("Algo"));
+	addAndMakeVisible((algoChooser = std::make_unique<SliderPfm2>("Algo")).get());
 	algoChooser->setRange(1, NUMBER_OF_ALGO, 1);
 	algoChooser->setTextBoxIsEditable(true);
 	algoChooser->setSliderStyle(Slider::IncDecButtons);
@@ -469,32 +531,25 @@ PanelEngine::PanelEngine ()
 	algoChooser->setDoubleClickReturnValue(true, 1.0f);
 	algoChooser->addListener(this);
 
-	for (int a = 0; a < legacyAlgorithmImageCount; a++) {
-		algoImages[a] = ImageFileFormat::loadFrom(algo4_pngs[a], algo4_png_sizes[a]);
-	}
-	for (int a = legacyAlgorithmImageCount; a < NUMBER_OF_ALGO; a++) {
-		algoImages[a] = createVosimAlgorithmImage(a + 1);
-	}
-	addAndMakeVisible(algoDrawableImage = new ImageComponent());
-	algoDrawableImage->setImage(algoImages[0], RectanglePlacement::centred | RectanglePlacement::onlyReduceInSize);
+	addAndMakeVisible((algoDrawableImage = std::make_unique<UnifiedAlgorithmDiagram>()).get());
 
-	addAndMakeVisible(algoChooserLabel = new Label("algo label", "Algo"));
+	addAndMakeVisible((algoChooserLabel = std::make_unique<Label>("algo label", "Algo")).get());
 	algoChooserLabel->setJustificationType(Justification::centredTop);
 
-	addAndMakeVisible(velocityLabel = new Label("velocity label", "Velocity"));
+	addAndMakeVisible((velocityLabel = std::make_unique<Label>("velocity label", "Velocity")).get());
 	velocityLabel->setJustificationType(Justification::centredTop);
 
-	addAndMakeVisible(velocity = new SliderPfm2("Velocity"));
+	addAndMakeVisible((velocity = std::make_unique<SliderPfm2>("Velocity")).get());
 	velocity->setRange(0, 16, 1);
 	velocity->setSliderStyle(Slider::RotaryVerticalDrag);
 	velocity->setTextBoxStyle(Slider::TextBoxAbove, false, 30, 16);
 	velocity->setDoubleClickReturnValue(true, 1.0f);
 	velocity->addListener(this);
 
-	addAndMakeVisible(velocityLabel = new Label("velocity label", "Velocity"));
+	addAndMakeVisible((velocityLabel = std::make_unique<Label>("velocity label", "Velocity")).get());
 	velocityLabel->setJustificationType(Justification::centredTop);
 
-	addAndMakeVisible(velocity = new SliderPfm2("Velocity"));
+	addAndMakeVisible((velocity = std::make_unique<SliderPfm2>("Velocity")).get());
 	velocity->setRange(0, 16, 1);
 	velocity->setValue(12, dontSendNotification);
 	velocity->setSliderStyle(Slider::RotaryVerticalDrag);
@@ -502,17 +557,17 @@ PanelEngine::PanelEngine ()
 	velocity->setDoubleClickReturnValue(true, 1.0f);
 	velocity->addListener(this);
 
-	addAndMakeVisible(voicesLabel = new Label("voices label", "Voices"));
+	addAndMakeVisible((voicesLabel = std::make_unique<Label>("voices label", "Voices")).get());
 	voicesLabel->setJustificationType(Justification::centredTop);
 
-	addAndMakeVisible(voices = new SliderPfm2("Voices"));
+	addAndMakeVisible((voices = std::make_unique<SliderPfm2>("Voices")).get());
 	voices->setRange(0, 8, 1);
 	voices->setSliderStyle(Slider::RotaryVerticalDrag);
 	voices->setTextBoxStyle(Slider::TextBoxAbove, false, 30, 16);
 	voices->setDoubleClickReturnValue(true, 3.0f);
 	voices->addListener(this);
 
-	playModePfm3 = new ComboBox("Play Mode pfm3");
+	playModePfm3 = std::make_unique<ComboBox>("Play Mode pfm3");
 	playModePfm3->setJustificationType(Justification::centred);
 	playModePfm3->setColour(ComboBox::buttonColourId, Colours::blue);
 	playModePfm3->addItem("Mono", 1);
@@ -522,9 +577,9 @@ PanelEngine::PanelEngine ()
 	playModePfm3->setScrollWheelEnabled(true);
 	playModePfm3->setEditableText(false);
 	playModePfm3->addListener(this);
-	addAndMakeVisible(playModePfm3);
+	addAndMakeVisible(playModePfm3.get());
 
-	playModePfm2 = new ComboBox("Play Mode pfm2");
+	playModePfm2 = std::make_unique<ComboBox>("Play Mode pfm2");
 	playModePfm2->setJustificationType(Justification::centred);
 	playModePfm2->setColour(ComboBox::buttonColourId, Colours::blue);
 	playModePfm2->addItem("Poly", 1);
@@ -533,13 +588,13 @@ PanelEngine::PanelEngine ()
 	playModePfm2->setScrollWheelEnabled(true);
 	playModePfm2->setEditableText(false);
 	playModePfm2->addListener(this);
-	addAndMakeVisible(playModePfm2);
+	addAndMakeVisible(playModePfm2.get());
 
 
-	addAndMakeVisible(glideLabel = new Label("glide label", "Glide"));
+	addAndMakeVisible((glideLabel = std::make_unique<Label>("glide label", "Glide")).get());
 	glideLabel->setJustificationType(Justification::centredTop);
 
-	addAndMakeVisible(glide = new SliderPfm2("Glide"));
+	addAndMakeVisible((glide = std::make_unique<SliderPfm2>("Glide")).get());
 	glide->setRange(0, 12, 1);
 	glide->setSliderStyle(Slider::RotaryVerticalDrag);
 	glide->setTextBoxStyle(Slider::TextBoxAbove, false, 30, 16);
@@ -547,10 +602,10 @@ PanelEngine::PanelEngine ()
 	glide->setAlwaysOnTop(true);
 	glide->addListener(this);
 
-	addAndMakeVisible(glideTypeLabel = new Label("glide type label", "Glide Type"));
+	addAndMakeVisible((glideTypeLabel = std::make_unique<Label>("glide type label", "Glide Type")).get());
 	glideTypeLabel->setJustificationType(Justification::centredTop);
 
-	glideType = new ComboBox("Glide Type");
+	glideType = std::make_unique<ComboBox>("Glide Type");
 	glideType->setJustificationType(Justification::centred);
 	glideType->setColour(ComboBox::buttonColourId, Colours::blue);
 	glideType->addItem("Off", 1);
@@ -560,22 +615,22 @@ PanelEngine::PanelEngine ()
 	glideType->setScrollWheelEnabled(true);
 	glideType->setEditableText(false);
 	glideType->addListener(this);
-	addAndMakeVisible(glideType);
+	addAndMakeVisible(glideType.get());
 
-	addAndMakeVisible(unisonSpreadLabel = new Label("unison spread label", "Spread"));
+	addAndMakeVisible((unisonSpreadLabel = std::make_unique<Label>("unison spread label", "Spread")).get());
 	unisonSpreadLabel->setJustificationType(Justification::centredTop);
 
-	addAndMakeVisible(unisonSpread = new SliderPfm2("Unison Spread"));
+	addAndMakeVisible((unisonSpread = std::make_unique<SliderPfm2>("Unison Spread")).get());
 	unisonSpread->setRange(0.0, 1.0, .01);
 	unisonSpread->setSliderStyle(Slider::RotaryVerticalDrag);
 	unisonSpread->setTextBoxStyle(Slider::TextBoxAbove, false, 50, 16);
 	unisonSpread->setDoubleClickReturnValue(true, 3.0f);
 	unisonSpread->addListener(this);
 
-	addAndMakeVisible(unisonDetuneLabel = new Label("Unison Detune label", "Detune"));
+	addAndMakeVisible((unisonDetuneLabel = std::make_unique<Label>("Unison Detune label", "Detune")).get());
 	unisonDetuneLabel->setJustificationType(Justification::centredTop);
 
-	addAndMakeVisible(unisonDetune = new SliderPfm2("Unison Detune"));
+	addAndMakeVisible((unisonDetune = std::make_unique<SliderPfm2>("Unison Detune")).get());
 	unisonDetune->setRange(-1.0, 1.0, .01);
 	unisonDetune->setSliderStyle(Slider::RotaryVerticalDrag);
 	unisonDetune->setTextBoxStyle(Slider::TextBoxAbove, false, 50, 16);
@@ -591,8 +646,8 @@ PanelEngine::PanelEngine ()
     //[Constructor] You can add your own custom stuff here..
 	eventsToAdd = nullptr;
 	voices->setValue(4.0f, sendNotification);
-	sliderValueChanged(voices);
-	sliderValueChanged(algoChooser);
+	sliderValueChanged(voices.get());
+	sliderValueChanged(algoChooser.get());
     //[/Constructor]
 }
 
@@ -617,32 +672,27 @@ void PanelEngine::paint (juce::Graphics& g)
 
     //[/UserPrePaint]
 
-    {
-        int x = proportionOfWidth (0.5000f), y = proportionOfHeight (0.0100f), width = proportionOfWidth (0.5000f), height = proportionOfHeight (0.6000f);
-        juce::Colour fillColour1 = juce::Colour (0xff125368), fillColour2 = juce::Colour (0xff083543);
-        //[UserPaintCustomArguments] Customize the painting arguments here..
-        //[/UserPaintCustomArguments]
-        g.setGradientFill (juce::ColourGradient (fillColour1,
-                                             static_cast<float> (proportionOfWidth (0.8000f)) - static_cast<float> (proportionOfWidth (0.5000f)) + x,
-                                             static_cast<float> (proportionOfHeight (0.0500f)) - static_cast<float> (proportionOfHeight (0.0100f)) + y,
-                                             fillColour2,
-                                             static_cast<float> (proportionOfWidth (0.5100f)) - static_cast<float> (proportionOfWidth (0.5000f)) + x,
-                                             static_cast<float> (proportionOfHeight (0.0500f)) - static_cast<float> (proportionOfHeight (0.0100f)) + y,
-                                             true));
-        g.fillRect (x, y, width, height);
-    }
+    g.fillAll (juce::Colour (0xff0b1117));
 
-    {
-        float x = static_cast<float> (proportionOfWidth (0.1412f)), y = static_cast<float> (proportionOfHeight (0.0065f)), width = static_cast<float> (proportionOfWidth (0.2720f)), height = static_cast<float> (proportionOfHeight (0.3094f));
-        juce::Colour fillColour = juce::Colour (0xff125468);
-        juce::Colour strokeColour = juce::Colour (0xff749fad);
-        //[UserPaintCustomArguments] Customize the painting arguments here..
-        //[/UserPaintCustomArguments]
-        g.setColour (fillColour);
-        g.fillRoundedRectangle (x, y, width, height, 10.000f);
-        g.setColour (strokeColour);
-        g.drawRoundedRectangle (x, y, width, height, 10.000f, 1.500f);
-    }
+	const auto drawModule = [&g](Rectangle<float> bounds, Colour fill, Colour border)
+	{
+		g.setColour(fill);
+		g.fillRoundedRectangle(bounds, 9.0f);
+		g.setColour(border);
+		g.drawRoundedRectangle(bounds, 9.0f, 1.0f);
+	};
+
+	drawModule({ static_cast<float>(proportionOfWidth(0.008f)),
+		static_cast<float>(proportionOfHeight(0.006f)),
+		static_cast<float>(proportionOfWidth(0.405f)),
+		static_cast<float>(proportionOfHeight(0.305f)) },
+		Colour(0xff102630), Colour(0xff315d69));
+
+	drawModule({ static_cast<float>(proportionOfWidth(0.418f)),
+		static_cast<float>(proportionOfHeight(0.006f)),
+		static_cast<float>(proportionOfWidth(0.185f)),
+		static_cast<float>(proportionOfHeight(0.305f)) },
+		Colour(0xff111e2b), Colour(0xff344b60));
 
     //[UserPaint] Add your own custom painting code here..
     //[/UserPaint]
@@ -796,7 +846,7 @@ void PanelEngine::newAlgo(int algoNumber) {
 		// Only carrier operators have loop
 		enveloppe[o]->setOperatorType(algoOpInformation[algoNumber][o]);
 	}
-	algoDrawableImage->setImage(algoImages[algoNumber], RectanglePlacement::centred | RectanglePlacement::onlyReduceInSize);
+	static_cast<UnifiedAlgorithmDiagram*>(algoDrawableImage.get())->setAlgorithm(algoNumber);
 	resizeAlgoDrawableImage();
 }
 
@@ -817,12 +867,12 @@ void PanelEngine::sliderValueChanged(Slider* sliderThatWasMoved, bool fromPlugin
 		AudioProcessorParameter* parameterReady = parameterMap[sliderThatWasMoved->getName()];
 		if (parameterReady != nullptr) {
 			float value = (float)sliderThatWasMoved->getValue();
-			((MidifiedFloatParameter*)parameterReady)->setRealValue(value);
+			static_cast<MidifiedFloatParameter*>(parameterReady)->setRealValue(value);
 		}
 	}
-	if (sliderThatWasMoved == algoChooser) {
+	if (sliderThatWasMoved == algoChooser.get()) {
 		newAlgo((int)(algoChooser->getValue() - 1));
-	} else if (sliderThatWasMoved == voices) {
+	} else if (sliderThatWasMoved == voices.get()) {
 
 		enableComponent(playModePfm2.get(), voices->getValue() > 1);
 
@@ -844,17 +894,17 @@ void PanelEngine::comboBoxChanged(ComboBox* comboBoxThatHasChanged) {
 
 void PanelEngine::comboBoxChanged(ComboBox* comboBoxThatHasChanged, bool fromPluginUI) {
 
-	if (comboBoxThatHasChanged == playModePfm3) {
+	if (comboBoxThatHasChanged == playModePfm3.get()) {
 		bool glideEnable = playModePfm3->getSelectedId() != 2;
 
 		enableComponent(glideTypeLabel.get(), glideEnable);
 		enableComponent(glideType.get(), glideEnable);
 
 		if (pfmType == TYPE_PREENFM3) {
-			comboBoxChanged(glideType, false);
+			comboBoxChanged(glideType.get(), false);
 		}
 		else {
-			sliderValueChanged(voices, false);
+			sliderValueChanged(voices.get(), false);
 		}
 
 		bool spreadEnable = playModePfm3->getSelectedId() >= 3;
@@ -866,7 +916,7 @@ void PanelEngine::comboBoxChanged(ComboBox* comboBoxThatHasChanged, bool fromPlu
 		enableComponent(unisonDetune.get(), spreadEnable);
 
 	}
-	else if (comboBoxThatHasChanged == playModePfm2) {
+	else if (comboBoxThatHasChanged == playModePfm2.get()) {
 
 		bool unison = playModePfm2->getSelectedId()== 2;
 
@@ -879,7 +929,7 @@ void PanelEngine::comboBoxChanged(ComboBox* comboBoxThatHasChanged, bool fromPlu
 		enableComponent(glideLabel.get(), voices->getValue() == 1 || unison);
 		enableComponent(glide.get(), voices->getValue() == 1 || unison);
 	}
-	else if (comboBoxThatHasChanged == glideType) {
+	else if (comboBoxThatHasChanged == glideType.get()) {
 		bool glideEnable = (glideType->getSelectedId() != 1) && (playModePfm3->getSelectedId() != 2);
 		enableComponent(glideLabel.get(), glideEnable);
 		enableComponent(glide.get(), glideEnable);
@@ -891,7 +941,7 @@ void PanelEngine::comboBoxChanged(ComboBox* comboBoxThatHasChanged, bool fromPlu
 		AudioProcessorParameter * parameterReady = parameterMap[comboBoxThatHasChanged->getName()];
 		if (parameterReady != nullptr) {
 			float value = (float)comboBoxThatHasChanged->getSelectedId();
-			((MidifiedFloatParameter*)parameterReady)->setRealValue(value);
+			static_cast<MidifiedFloatParameter*>(parameterReady)->setRealValue(value);
 		}
 	}
 }
@@ -901,13 +951,13 @@ void PanelEngine::buttonClicked(Button* buttonThatWasClicked)
 	//[UserbuttonClicked_Pre]
 	bool enveloppeButtonClicked = false;
 	for (int k = 0; k < NUMBER_OF_OPERATORS; k++) {
-		if (buttonThatWasClicked == enveloppeButton[k]) {
+		if (buttonThatWasClicked == enveloppeButton[k].get()) {
 			enveloppeButtonClicked = true;
 		}
 	}
 	if (enveloppeButtonClicked) {
 		for (int k = 0; k < NUMBER_OF_OPERATORS; k++) {
-			if (buttonThatWasClicked == enveloppeButton[k]) {
+			if (buttonThatWasClicked == enveloppeButton[k].get()) {
 				envSelected = k;
 				enveloppe[k]->setVisible(true);
 				opShape[k]->setVisible(true);
@@ -925,7 +975,7 @@ void PanelEngine::buttonClicked(Button* buttonThatWasClicked)
 		}
 	}
 
-	if (buttonThatWasClicked == envPasteButton) {
+	if (buttonThatWasClicked == envPasteButton.get()) {
 		if (envToCopy >= 0) {
 			for (int k = 0; k < enveloppe[envToCopy]->getNumberOfPoints(); k++) {
 				enveloppe[envSelected]->setX(k, enveloppe[envToCopy]->getX(k));
@@ -939,7 +989,7 @@ void PanelEngine::buttonClicked(Button* buttonThatWasClicked)
 			enveloppe[envSelected]->repaint();
 		}
 	}
-	else if (buttonThatWasClicked == envCopyButton) {
+	else if (buttonThatWasClicked == envCopyButton.get()) {
 		envToCopy = envSelected;
 		envPasteButton->setButtonText("Paste " + String(envToCopy + 1));
 	}
@@ -954,33 +1004,33 @@ void PanelEngine::buttonClicked(Button* buttonThatWasClicked)
 
 
 void PanelEngine::buildParameters() {
-	updateSliderFromParameter(algoChooser);
-	updateSliderFromParameter(velocity);
-	updateSliderFromParameter(voices);
-	updateSliderFromParameter(glide);
+	updateSliderFromParameter(algoChooser.get());
+	updateSliderFromParameter(velocity.get());
+	updateSliderFromParameter(voices.get());
+	updateSliderFromParameter(glide.get());
 
 	// pfm3
-	updateComboFromParameter(playModePfm3);
-	updateComboFromParameter(glideType);
-	updateSliderFromParameter(unisonDetune);
-	updateSliderFromParameter(unisonSpread);
+	updateComboFromParameter(playModePfm3.get());
+	updateComboFromParameter(glideType.get());
+	updateSliderFromParameter(unisonDetune.get());
+	updateSliderFromParameter(unisonSpread.get());
 
 	// pfm2
-	updateComboFromParameter(playModePfm2);
+	updateComboFromParameter(playModePfm2.get());
 
 	for (int k = 0; k < NUMBER_OF_MIX; k++) {
-		updateSliderFromParameter(mixKnob[k]);
-		updateSliderFromParameter(panKnob[k]);
+		updateSliderFromParameter(mixKnob[k].get());
+		updateSliderFromParameter(panKnob[k].get());
 	}
 	for (int k = 0; k < NUMBER_OF_IM; k++) {
-		updateSliderFromParameter(IMKnob[k]);
-		updateSliderFromParameter(IMVelocityKnob[k]);
+		updateSliderFromParameter(IMKnob[k].get());
+		updateSliderFromParameter(IMVelocityKnob[k].get());
 	}
 	for (int k = 0; k < NUMBER_OF_OPERATORS; k++) {
-		updateComboFromParameter(opShape[k]);
-		updateComboFromParameter(opFrequencyType[k]);
-		updateSliderFromParameter(opFrequency[k]);
-		updateSliderFromParameter(opFrequencyFineTune[k]);
+		updateComboFromParameter(opShape[k].get());
+		updateComboFromParameter(opFrequencyType[k].get());
+		updateSliderFromParameter(opFrequency[k].get());
+		updateSliderFromParameter(opFrequencyFineTune[k].get());
 	}
 
 	// To fill map with all points
@@ -1003,7 +1053,7 @@ void PanelEngine::updateUIEnveloppe(String paramName) {
 
 			MidifiedFloatParameter* param = checkParamExistence(name);
 
-			if (paramName.length() > 0 && (param == nullptr || name != String(paramName))) {
+			if (param == nullptr || (paramName.length() > 0 && name != String(paramName))) {
 				continue;
 			}
 
@@ -1068,18 +1118,18 @@ void PanelEngine::sliderDragEnded(Slider* slider) {
 
 	hideTotallyComponent(voices.get(), !isPreenfm2);
 
-	hideTotallyComponent(playModePfm2, !isPreenfm2);
-	hideTotallyComponent(playModePfm3, isPreenfm2);
+	hideTotallyComponent(playModePfm2.get(), !isPreenfm2);
+	hideTotallyComponent(playModePfm3.get(), isPreenfm2);
 
 
 
 	if (isPreenfm2) {
 		voicesLabel->setText("Voices", NotificationType::dontSendNotification);
-		sliderValueChanged(voices, false);
+		sliderValueChanged(voices.get(), false);
 
 	} else 	{
 		voicesLabel->setText("Play mode", NotificationType::dontSendNotification);
-		comboBoxChanged(playModePfm3, false);
+		comboBoxChanged(playModePfm3.get(), false);
 	}
 
 	newAlgo((int)(algoChooser->getValue() - 1));

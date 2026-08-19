@@ -56,10 +56,10 @@ MainTabs::MainTabs ()
 
     tabbedComponent.reset (new TabbedComponent (TabbedButtonBar::TabsAtTop));
     addAndMakeVisible (tabbedComponent.get());
-    tabbedComponent->setTabBarDepth (30);
-    tabbedComponent->addTab (TRANS("Engine"), Colour (0xff111a24), new PanelEngine(), true);
-    tabbedComponent->addTab (TRANS("Modulation"), Colour (0xff111a24), new PanelModulation(), true);
-    tabbedComponent->addTab (TRANS("Arp & Filter"), Colour (0xff111a24), new PanelArpAndFilter(), true);
+    tabbedComponent->setTabBarDepth (38);
+    tabbedComponent->addTab (TRANS("Engine"), Colour (0xff0c151d), new PanelEngine(), true);
+    tabbedComponent->addTab (TRANS("Modulation"), Colour (0xff0d1620), new PanelModulation(), true);
+    tabbedComponent->addTab (TRANS("Arp & Filter"), Colour (0xff0f1720), new PanelArpAndFilter(), true);
     tabbedComponent->setCurrentTabIndex (0);
 
     pullButton.reset (new TextButton ("pull button"));
@@ -72,7 +72,9 @@ MainTabs::MainTabs ()
                                       TRANS("preset_89ABC")));
     addAndMakeVisible (presetNameLabel.get());
     presetNameLabel->setTooltip (TRANS("Click to edit"));
-    presetNameLabel->setFont (Font (20.00f, Font::plain).withTypefaceStyle ("Bold"));
+    presetNameLabel->setFont (Font (FontOptions (20.00f, Font::plain)
+                                      .withMetricsKind (TypefaceMetricsKind::legacy))
+                                      .withTypefaceStyle ("Bold"));
     presetNameLabel->setJustificationType (Justification::centredLeft);
     presetNameLabel->setEditable (true, true, false);
     presetNameLabel->setColour (Label::textColourId, Colours::aliceblue);
@@ -199,12 +201,14 @@ void MainTabs::resized()
     //[UserPreResize] Add your own custom resize code here..
     //[/UserPreResize]
 
-    tabbedComponent->setBounds (0, 10, getWidth() - 0, getHeight() - 0);
+    tabbedComponent->setBounds (0, 10, getWidth(), jmax (0, getHeight() - 10));
     pullButton->setBounds (getWidth() - 116, 8, 55, 24);
     pushButton->setBounds (getWidth() - 184, 8, 55, 24);
     midiChannelCombo->setBounds (getWidth() - 254, 8, 55, 24);
     deviceButton->setBounds (getWidth() - 330, 6, 67, 28);
     versionButton->setBounds (getWidth() - 60, 9, 56, 20);
+	pfmTypeCombo->setBounds (350, 8, 80, 24);
+	presetNameLabel->setBounds (440, 8, jmax (100, getWidth() - 780), 24);
     //[UserResized] Add your own custom resize handling here..
     //[/UserResized]
 }
@@ -316,35 +320,47 @@ void MainTabs::comboBoxChanged (ComboBox* comboBoxThatHasChanged)
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 
-MidifiedFloatParameter* MainTabs::getParameterFromName(String componentName) {
-	const Array<AudioProcessorParameter *> parameters = audioProcessor->getParameters();
+MidifiedFloatParameter* MainTabs::getParameterFromName(String requestedName) {
+	const auto& parameters = audioProcessor->getParameters();
 	for (int p = 0; p < parameters.size(); p++) {
-		MidifiedFloatParameter* midiFP = (MidifiedFloatParameter*)parameters[p];
-		if (midiFP->getName() == componentName) {
+		auto* midiFP = static_cast<MidifiedFloatParameter*>(parameters[p]);
+		if (midiFP->getName() == requestedName) {
 			return midiFP;
 		}
 	}
 	return nullptr;
 }
 
+void MainTabs::setMidiQueueWarning(uint64_t droppedOutput, uint64_t droppedInput) {
+	if (droppedOutput == 0 && droppedInput == 0) {
+		deviceButton->setButtonText(TRANS("Midi"));
+		return;
+	}
 
-void MainTabs::buildParameters(AudioProcessor *audioProcessor) {
-	this->audioProcessor = audioProcessor;
+	deviceButton->setButtonText(TRANS("Midi !"));
+	deviceButton->setTooltip(
+		"MIDI data loss: " + String(droppedOutput)
+		+ " outgoing and " + String(droppedInput)
+		+ " incoming queue events were rejected. Click to check the MIDI devices.");
+}
 
-	panelEngine->setParameterSet(audioProcessor);
+void MainTabs::buildParameters(AudioProcessor *processor) {
+	audioProcessor = processor;
+
+	panelEngine->setParameterSet(processor);
 	panelEngine->buildParameters();
 
-	panelModulation->setParameterSet(audioProcessor);
+	panelModulation->setParameterSet(processor);
 	panelModulation->buildParameters();
 
-	panelArpAndFilter->setParameterSet(audioProcessor);
+	panelArpAndFilter->setParameterSet(processor);
 	panelArpAndFilter->buildParameters();
 }
 
 void MainTabs::updateUI(std::unordered_set<String> &paramSet) {
 
-    std::unordered_set<String>::const_iterator pfmType = paramSet.find("pfm Type");
-    if (pfmType != paramSet.end()) {
+    std::unordered_set<String>::const_iterator pfmTypeUpdate = paramSet.find("pfm Type");
+    if (pfmTypeUpdate != paramSet.end()) {
         MidifiedFloatParameter* param = getParameterFromName("pfm Type");
         pfmTypeCombo->setSelectedId((int)param->getRealValue());
     }
@@ -366,24 +382,19 @@ void MainTabs::setPresetName(String presetName) {
 	presetNameLabel->setText(presetName, dontSendNotification);
 }
 
-void MainTabs::setPresetNamePtr(char* presetNamePtr) {
-	this->presetNamePtr = presetNamePtr;
+void MainTabs::setPresetNamePtr(char* nameBuffer) {
+	presetNamePtr = nameBuffer;
 }
-
-void MainTabs::setMidiOutBuffer(MidiBuffer *midiOutBuffer) {
-	this->midiOutBuffer = midiOutBuffer;
-}
-
 
 void MainTabs::setMidiChannel(int newMidiChannel) {
 	midiChannelCombo->setSelectedId(newMidiChannel);
 }
 
-void MainTabs::setPfmType(int pfmType) {
-    pfmTypeCombo->setSelectedId(pfmType);
-    panelEngine->setPfmType(pfmType);
-    panelModulation->setPfmType(pfmType);
-    panelArpAndFilter->setPfmType(pfmType);
+void MainTabs::setPfmType(int newPfmType) {
+    pfmTypeCombo->setSelectedId(newPfmType);
+    panelEngine->setPfmType(newPfmType);
+    panelModulation->setPfmType(newPfmType);
+    panelArpAndFilter->setPfmType(newPfmType);
 }
 
 //[/MiscUserCode]

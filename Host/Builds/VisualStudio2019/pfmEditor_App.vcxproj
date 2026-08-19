@@ -140,7 +140,6 @@
     <Lib/>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\Plugin\Source\UI\png\AlgoPNG.cpp"/>
     <ClCompile Include="..\..\..\Plugin\Source\UI\Enveloppe.cpp"/>
     <ClCompile Include="..\..\..\Plugin\Source\UI\EnveloppeAbstract.cpp"/>
     <ClCompile Include="..\..\..\Plugin\Source\UI\EnveloppeFree1.cpp"/>
@@ -2114,7 +2113,6 @@
     <ClCompile Include="..\..\JuceLibraryCode\include_juce_opengl.cpp"/>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\Plugin\Source\UI\png\AlgoPNG.h"/>
     <ClInclude Include="..\..\..\Plugin\Source\UI\Enveloppe.h"/>
     <ClInclude Include="..\..\..\Plugin\Source\UI\EnveloppeAbstract.h"/>
     <ClInclude Include="..\..\..\Plugin\Source\UI\EnveloppeFree1.h"/>

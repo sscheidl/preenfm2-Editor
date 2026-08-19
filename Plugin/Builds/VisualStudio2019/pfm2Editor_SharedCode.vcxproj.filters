@@ -481,9 +481,6 @@
     <ClCompile Include="..\..\Source\UI\PanelModulation.cpp">
       <Filter>pfm2Editor\Source\UI</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\UI\png\AlgoPNG.cpp">
-      <Filter>pfm2Editor\Source\UI\png</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Source\UI\PreenLookAndFeel.cpp">
       <Filter>pfm2Editor\Source\UI</Filter>
     </ClCompile>
@@ -2624,9 +2621,6 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\PanelOfComponents.h">
       <Filter>pfm2Editor\Source\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\png\AlgoPNG.h">
-      <Filter>pfm2Editor\Source\UI\png</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\PreenLookAndFeel.h">
       <Filter>pfm2Editor\Source\UI</Filter>

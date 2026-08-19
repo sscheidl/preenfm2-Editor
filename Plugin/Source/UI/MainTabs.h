@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 //[Headers]     -- You can add your own extra header files here --
 /*
 * Copyright 2014 Xavier Hosxe
@@ -67,14 +69,14 @@ public:
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
-	void buildParameters(AudioProcessor *audioProcessor);
+	void buildParameters(AudioProcessor *processor);
 	void updateUI(std::unordered_set<String> &paramSet);
 	void setPresetName(String presetName);
-	void setPresetNamePtr(char* presetNamePtr);
-	void setMidiOutBuffer(MidiBuffer *midiOutBuffer);
+	void setPresetNamePtr(char* nameBuffer);
 	void setMidiChannel(int newMidiChannel);
-    void setPfmType(int pfmType);
-	MidifiedFloatParameter* getParameterFromName(String componentName);
+    void setPfmType(int newPfmType);
+	void setMidiQueueWarning(uint64_t droppedOutput, uint64_t droppedInput);
+	MidifiedFloatParameter* getParameterFromName(String requestedName);
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -95,7 +97,6 @@ private:
 	float pullButtonValue;
 	float pushButtonValue;
 	int currentMidiChannel;
-	MidiBuffer *midiOutBuffer;
 	char *presetNamePtr;
     int pfmType;
     //[/UserVariables]

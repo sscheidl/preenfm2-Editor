@@ -117,10 +117,6 @@
 			isa = PBXBuildFile;
 			fileRef = 33E92A7DA30C094B67A6B201;
 		};
-		1CF5ACB8322777A97A83C8E4 = {
-			isa = PBXBuildFile;
-			fileRef = 37F551A1042E654F8FC49A25;
-		};
 		A57DBA666E9A6F8A591A76BC = {
 			isa = PBXBuildFile;
 			fileRef = 4825021F67D27894C8C66732;
@@ -419,13 +415,6 @@
 			path = ../../Source/UI/EnveloppeAbstract.h;
 			sourceTree = "SOURCE_ROOT";
 		};
-		37F551A1042E654F8FC49A25 = {
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.cpp.cpp;
-			name = AlgoPNG.cpp;
-			path = ../../Source/UI/png/AlgoPNG.cpp;
-			sourceTree = "SOURCE_ROOT";
-		};
 		38BA6196F0444534D49DB1FF = {
 			isa = PBXFileReference;
 			lastKnownFileType = file;
@@ -530,13 +519,6 @@
 			name = Foundation.framework;
 			path = System/Library/Frameworks/Foundation.framework;
 			sourceTree = SDKROOT;
-		};
-		567A4B9B301C04769A7A931E = {
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.h;
-			name = AlgoPNG.h;
-			path = ../../Source/UI/png/AlgoPNG.h;
-			sourceTree = "SOURCE_ROOT";
 		};
 		56A710D72CEDCD37B4E0B8E2 = {
 			isa = PBXFileReference;
@@ -940,8 +922,6 @@
 		CC9061702C034461BFF0FFDC = {
 			isa = PBXGroup;
 			children = (
-				37F551A1042E654F8FC49A25,
-				567A4B9B301C04769A7A931E,
 			);
 			name = png;
 			sourceTree = "<group>";
@@ -2182,7 +2162,6 @@
 				069B772001BB60453C2ED124,
 				55845BAC02E8E5E30A67571D,
 				195C0B5D5A850C461483F264,
-				1CF5ACB8322777A97A83C8E4,
 				A57DBA666E9A6F8A591A76BC,
 				CBF34257AA7051A51CD5428A,
 				7CC0F9689A0974DFFF0AC99A,

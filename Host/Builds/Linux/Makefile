@@ -68,7 +68,6 @@ ifeq ($(CONFIG),Release)
 endif
 
 OBJECTS_APP := \
-  $(JUCE_OBJDIR)/AlgoPNG_cf66d571.o \
   $(JUCE_OBJDIR)/Enveloppe_978f1a6b.o \
   $(JUCE_OBJDIR)/EnveloppeAbstract_ac9367ad.o \
   $(JUCE_OBJDIR)/EnveloppeFree1_8522c964.o \
@@ -115,11 +114,6 @@ $(JUCE_OUTDIR)/$(JUCE_TARGET_APP) : $(OBJECTS_APP) $(RESOURCES)
 	-$(V_AT)mkdir -p $(JUCE_LIBDIR)
 	-$(V_AT)mkdir -p $(JUCE_OUTDIR)
 	$(V_AT)$(CXX) -o $(JUCE_OUTDIR)/$(JUCE_TARGET_APP) $(OBJECTS_APP) $(JUCE_LDFLAGS) $(JUCE_LDFLAGS_APP) $(RESOURCES) $(TARGET_ARCH)
-
-$(JUCE_OBJDIR)/AlgoPNG_cf66d571.o: ../../../Plugin/Source/UI/png/AlgoPNG.cpp
-	-$(V_AT)mkdir -p $(JUCE_OBJDIR)
-	@echo "Compiling AlgoPNG.cpp"
-	$(V_AT)$(CXX) $(JUCE_CXXFLAGS) $(JUCE_CPPFLAGS_APP) $(JUCE_CFLAGS_APP) -o "$@" -c "$<"
 
 $(JUCE_OBJDIR)/Enveloppe_978f1a6b.o: ../../../Plugin/Source/UI/Enveloppe.cpp
 	-$(V_AT)mkdir -p $(JUCE_OBJDIR)

@@ -20,6 +20,7 @@
 #ifndef PLUGINEDITOR_H_INCLUDED
 #define PLUGINEDITOR_H_INCLUDED
 
+#include <cstdint>
 #include <unordered_set>
 #include "JuceHeader.h"
 #include "PluginProcessor.h"
@@ -46,18 +47,15 @@ public:
 	void paint(Graphics& g);
 	void resized();
 	void timerCallback();
-	void updateUIWith(std::unordered_set<String> &paramSet);
-	void removeParamToUpdateUI(String paramName);
-	void setMidiOutBuffer(MidiBuffer *midiOutBuffer);
 	void setMidiChannel(int newMidiChannel);
 	void setPfmType(int pfmType);
 	void setPresetName(String presetName);
 
 private:
 	bool uiOutOfSync = false;
+	uint64_t lastDroppedOutputEventCount = 0;
+	uint64_t lastDroppedIncomingNrpnEventCount = 0;
 	MainTabs* mainTabs = nullptr;
-	std::unordered_set<String> parametersToUpdate;
-	std::mutex parametersToUpdateMutex;
 	Pfm2AudioProcessor* ownerFilter = nullptr;
 };
 

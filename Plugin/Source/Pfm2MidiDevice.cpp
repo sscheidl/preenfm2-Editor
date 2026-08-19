@@ -21,7 +21,13 @@
 #define MIDI_INPUT "midiInput"
 #define MIDI_OUTPUT "midiOutput"
 
-Pfm2MidiDevice::Pfm2MidiDevice() {
+Pfm2MidiDevice::Pfm2MidiDevice()
+	: Thread("PreenFM MIDI output")
+{
+	for (size_t index = 0; index < outputQueue.size(); ++index) {
+		outputQueue[index].sequence.store(index, std::memory_order_relaxed);
+	}
+
 	String pfm2InputDevice = "PreenFM mk2";
 	String pfm2OutputDevice = "PreenFM mk2";
 
@@ -80,9 +86,12 @@ Pfm2MidiDevice::Pfm2MidiDevice() {
 			break;
 		}
 	}
+
+	startThread(Thread::Priority::normal);
 }
 
 Pfm2MidiDevice::~Pfm2MidiDevice() {
+	stopThread(2000);
 	resetDevices();
 	delete midiPropertyFile;
 }
@@ -99,30 +108,184 @@ void Pfm2MidiDevice::resetDevices() {
 }
 
 
-void Pfm2MidiDevice::sendBlockOfMessagesNow(MidiBuffer& midiBuffer) {
-	if (pfm2MidiOutput != nullptr && pfm2MidiInput != nullptr) {
-		pfm2MidiOutput->sendBlockOfMessagesNow(midiBuffer);
+bool Pfm2MidiDevice::claimOutputQueueCell(size_t& position, OutputQueueCell*& cell) noexcept {
+	position = outputEnqueuePosition.load(std::memory_order_relaxed);
+
+	for (;;) {
+		cell = &outputQueue[position % outputQueueCapacity];
+		const size_t sequence = cell->sequence.load(std::memory_order_acquire);
+		const auto difference = static_cast<std::intptr_t>(sequence)
+			- static_cast<std::intptr_t>(position);
+
+		if (difference == 0) {
+			if (outputEnqueuePosition.compare_exchange_weak(position, position + 1,
+				std::memory_order_relaxed)) {
+				return true;
+			}
+		}
+		else if (difference < 0) {
+			return false;
+		}
+		else {
+			position = outputEnqueuePosition.load(std::memory_order_relaxed);
+		}
+	}
+}
+
+void Pfm2MidiDevice::finishEnqueue(size_t position, OutputQueueCell& cell) noexcept {
+	cell.sequence.store(position + 1, std::memory_order_release);
+}
+
+bool Pfm2MidiDevice::queueMidiMessage(const MidiMessage& message) noexcept {
+	return queueMidiMessage(message.getRawData(), message.getRawDataSize());
+}
+
+bool Pfm2MidiDevice::queueMidiMessage(const uint8_t* messageData,
+	int messageSize, int midiChannelOverride) noexcept {
+	if (messageData == nullptr || messageSize <= 0
+		|| messageSize > static_cast<int>(maximumQueuedMidiMessageBytes)) {
+		++droppedOutputEvents;
+		return false;
+	}
+	if (midiChannelOverride < 0 || midiChannelOverride > 16) {
+		++droppedOutputEvents;
+		return false;
+	}
+
+	size_t position = 0;
+	OutputQueueCell* cell = nullptr;
+	if (!claimOutputQueueCell(position, cell)) {
+		++droppedOutputEvents;
+		return false;
+	}
+
+	cell->event.type = OutputEventType::midiMessage;
+	cell->event.messageSize = static_cast<uint16_t>(messageSize);
+	std::memcpy(cell->event.messageData.data(), messageData,
+		static_cast<size_t>(messageSize));
+
+	const uint8_t statusByte = cell->event.messageData[0];
+	if (midiChannelOverride > 0 && statusByte >= 0x80 && statusByte < 0xf0) {
+		cell->event.messageData[0] = static_cast<uint8_t>(
+			(statusByte & 0xf0) | (midiChannelOverride - 1));
+	}
+
+	finishEnqueue(position, *cell);
+	return true;
+}
+
+bool Pfm2MidiDevice::queueNrpn(int midiChannel, int parameter, int value) noexcept {
+	if (midiChannel < 1 || midiChannel > 16
+		|| parameter < 0 || parameter > 0x3fff
+		|| value < 0 || value > 0x3fff) {
+		++droppedOutputEvents;
+		return false;
+	}
+
+	size_t position = 0;
+	OutputQueueCell* cell = nullptr;
+	if (!claimOutputQueueCell(position, cell)) {
+		++droppedOutputEvents;
+		return false;
+	}
+
+	cell->event.type = OutputEventType::nrpn;
+	cell->event.midiChannel = static_cast<uint8_t>(midiChannel);
+	cell->event.nrpnParameter = static_cast<uint16_t>(parameter);
+	cell->event.nrpnValue = static_cast<uint16_t>(value);
+	finishEnqueue(position, *cell);
+	return true;
+}
+
+bool Pfm2MidiDevice::dequeueOutputEvent(OutputEvent& event) noexcept {
+	size_t position = outputDequeuePosition.load(std::memory_order_relaxed);
+	OutputQueueCell* cell = nullptr;
+
+	for (;;) {
+		cell = &outputQueue[position % outputQueueCapacity];
+		const size_t sequence = cell->sequence.load(std::memory_order_acquire);
+		const auto difference = static_cast<std::intptr_t>(sequence)
+			- static_cast<std::intptr_t>(position + 1);
+
+		if (difference == 0) {
+			if (outputDequeuePosition.compare_exchange_weak(position, position + 1,
+				std::memory_order_relaxed)) {
+				break;
+			}
+		}
+		else if (difference < 0) {
+			return false;
+		}
+		else {
+			position = outputDequeuePosition.load(std::memory_order_relaxed);
+		}
+	}
+
+	event.type = cell->event.type;
+	if (event.type == OutputEventType::midiMessage) {
+		event.messageSize = cell->event.messageSize;
+		std::memcpy(event.messageData.data(), cell->event.messageData.data(),
+			event.messageSize);
 	}
 	else {
-		choseNewDevices();
+		event.midiChannel = cell->event.midiChannel;
+		event.nrpnParameter = cell->event.nrpnParameter;
+		event.nrpnValue = cell->event.nrpnValue;
+	}
+
+	cell->sequence.store(position + outputQueueCapacity, std::memory_order_release);
+	return true;
+}
+
+void Pfm2MidiDevice::sendOutputEvent(const OutputEvent& event) {
+	const ScopedLock lock(messageLock);
+	if (pfm2MidiOutput == nullptr || pfm2MidiInput == nullptr) {
+		return;
+	}
+
+	if (event.type == OutputEventType::midiMessage) {
+		pfm2MidiOutput->sendMessageNow(MidiMessage(event.messageData.data(),
+			static_cast<int>(event.messageSize), 0.0));
+		return;
+	}
+
+	MidiBuffer nrpnMessages;
+	const int channel = event.midiChannel;
+	const int parameter = event.nrpnParameter;
+	const int value = event.nrpnValue;
+	nrpnMessages.addEvent(MidiMessage::controllerEvent(channel, 99, parameter >> 7), 0);
+	nrpnMessages.addEvent(MidiMessage::controllerEvent(channel, 98, parameter & 0x7f), 0);
+	nrpnMessages.addEvent(MidiMessage::controllerEvent(channel, 6, value >> 7), 0);
+	nrpnMessages.addEvent(MidiMessage::controllerEvent(channel, 38, value & 0x7f), 0);
+	pfm2MidiOutput->sendBlockOfMessagesNow(nrpnMessages);
+}
+
+void Pfm2MidiDevice::run() {
+	while (!threadShouldExit()) {
+		bool sentAnything = false;
+		OutputEvent event;
+		while (dequeueOutputEvent(event)) {
+			sendOutputEvent(event);
+			sentAnything = true;
+			if (threadShouldExit()) {
+				break;
+			}
+		}
+
+		if (!sentAnything) {
+			wait(2);
+		}
 	}
 }
 
 
 void Pfm2MidiDevice::forceChoseNewDevices() {
-	showErrorMEssage = true;
+	showErrorMEssage.store(true);
 	choseNewDevices();
 }
 
 void Pfm2MidiDevice::choseNewDevices() {
-	const ScopedTryLock myScopedTryLock(messageLock);
-
-	if (!myScopedTryLock.isLocked()) {
-		return;
-	}
-
-	if (showErrorMEssage) {
-		showErrorMEssage = false;
+	if (showErrorMEssage.exchange(false)) {
 
 		AlertWindow midiWindow("Where is your preenfm ?",
 			"",
@@ -177,6 +340,7 @@ void Pfm2MidiDevice::choseNewDevices() {
 			} while ((midiWindow.getComboBoxComponent("From")->getSelectedId() == 1 || midiWindow.getComboBoxComponent("To")->getSelectedId() == 1) && result == 1);
 
 			if (result == 1) {
+				const ScopedLock deviceLock(messageLock);
 
 				if (pfm2MidiOutput.get() != nullptr) {
 					pfm2MidiOutput.reset();
@@ -220,28 +384,18 @@ void Pfm2MidiDevice::choseNewDevices() {
 }
 
 void Pfm2MidiDevice::addListener(MidiInputCallback *listener) {
-	listeners.push_back(listener);
+	listeners.add(listener);
 }
 
 void Pfm2MidiDevice::removeListener(MidiInputCallback *listener) {
-	MidiInputCallbackList::iterator iterator = listeners.begin();
-	while (iterator != listeners.end() && listeners.size() > 0) {
-		if (*iterator == listener) {
-			iterator = listeners.erase(iterator);
-		}
-		else {
-			++iterator;
-		}
-	}
+	listeners.remove(listener);
 }
 
 void Pfm2MidiDevice::handleIncomingMidiMessage(MidiInput * source, const MidiMessage &midiMessage) {
-	for (MidiInputCallbackList::const_iterator iterator = listeners.begin(); iterator != listeners.end(); ++iterator) {
-		(*iterator)->handleIncomingMidiMessage(source, midiMessage);
-	}
+	listeners.call(&MidiInputCallback::handleIncomingMidiMessage, source, midiMessage);
 }
 
-void Pfm2MidiDevice::handlePartialSysexMessage(MidiInput *source, const uint8 *messageData, int numBytesSoFar, double timestamp) {
+void Pfm2MidiDevice::handlePartialSysexMessage(MidiInput*, const uint8*, int, double) {
 
 }
 

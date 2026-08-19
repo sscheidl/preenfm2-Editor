@@ -69,10 +69,6 @@
 			isa = PBXBuildFile;
 			fileRef = F6B04E8AA0943B5BA361EA65;
 		};
-		A70E37E86C73DE9460C4CE3E = {
-			isa = PBXBuildFile;
-			fileRef = B9E73051FBBA858C656E2B70;
-		};
 		E86BB50097C930476F61C9C2 = {
 			isa = PBXBuildFile;
 			fileRef = 32F081D2B1C4E3F11BBBADC6;
@@ -438,13 +434,6 @@
 			path = ../../../Plugin/Source/UI/MainTabs.h;
 			sourceTree = "SOURCE_ROOT";
 		};
-		760EBBB873ECD467FD1520CD = {
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.h;
-			name = AlgoPNG.h;
-			path = ../../../Plugin/Source/UI/png/AlgoPNG.h;
-			sourceTree = "SOURCE_ROOT";
-		};
 		7678E285555FFE008F1BAE90 = {
 			isa = PBXFileReference;
 			lastKnownFileType = sourcecode.cpp.cpp;
@@ -641,13 +630,6 @@
 			path = ../../../Plugin/Source/UI/StepSequencer.h;
 			sourceTree = "SOURCE_ROOT";
 		};
-		B9E73051FBBA858C656E2B70 = {
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.cpp.cpp;
-			name = AlgoPNG.cpp;
-			path = ../../../Plugin/Source/UI/png/AlgoPNG.cpp;
-			sourceTree = "SOURCE_ROOT";
-		};
 		BA098287F42F81EEFEA80896 = {
 			isa = PBXFileReference;
 			lastKnownFileType = sourcecode.cpp.cpp;
@@ -798,8 +780,6 @@
 		F8187C37F45B901379173538 = {
 			isa = PBXGroup;
 			children = (
-				B9E73051FBBA858C656E2B70,
-				760EBBB873ECD467FD1520CD,
 				32F081D2B1C4E3F11BBBADC6,
 				D343719D9D3B0C74A1899961,
 				BA098287F42F81EEFEA80896,
@@ -1182,7 +1162,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A70E37E86C73DE9460C4CE3E,
 				E86BB50097C930476F61C9C2,
 				DACE5C143106102F2D9E7EA1,
 				2CD26723383FB4C9A6C8B5BA,

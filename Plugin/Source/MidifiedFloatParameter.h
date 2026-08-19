@@ -50,8 +50,9 @@ public:
         this->nrpnParam = nrpnParam;
 
         bias = 0;
-        paramIndex = paramIndexCounter++;
         bIsAutomatable = true;
+        discreteStepCount = valueMultipler == 1.0f
+            ? roundToInt(maxValue - minValue) + 1 : 0;
     }
 
 
@@ -87,13 +88,17 @@ public:
     }
 
 
-    float getValueFromNrpn(int nrpnValue) const {
+    float getUnclampedValueFromNrpn(int nrpnValue) const {
         if (!sendRealValue) {
-            return range.snapToLegalValue(((float)nrpnValue) / this->valueMultiplier + this->pfm2MinValue - bias);
+            return ((float)nrpnValue) / this->valueMultiplier
+                + this->pfm2MinValue - bias;
         }
-        else {
-            return range.snapToLegalValue((float)nrpnValue - bias);
-        }
+
+        return (float)nrpnValue - bias;
+    }
+
+    float getValueFromNrpn(int nrpnValue) const {
+        return range.snapToLegalValue(getUnclampedValueFromNrpn(nrpnValue));
     }
 
     void setSendRealValue(bool srv) {
@@ -104,18 +109,16 @@ public:
         return this->sendRealValue;
     }
 
-    void setProcessor(Pfm2AudioProcessor* audioProcessor) {
-        this->audioProcessor = audioProcessor;
+    void setProcessor(Pfm2AudioProcessor* processor) {
+        audioProcessor = processor;
     }
 
-    void addNrpn(MidiBuffer& midiBuffer, const int midiChannel);
-
-    static void resetParamIndexCounter() {
-        paramIndexCounter = 0;
+    int getNrpnValue() const {
+        return ((getNrpnValueMSB() & 0x7f) << 7) | (getNrpnValueLSB() & 0x7f);
     }
 
     int getParamIndex() const {
-        return paramIndex;
+        return getParameterIndex();
     }
     void setBias(float b) {
         this->bias = b;
@@ -182,9 +185,7 @@ public:
     String getName(int maximumStringLength) const {
         return componentName.substring(0, maximumStringLength);
     }
-    String getLabel() const {
-        return componentName;
-    }
+    String getLabel() const { return {}; }
 
     void setIsAutomatable(bool automatable) {
         bIsAutomatable = automatable;
@@ -194,21 +195,33 @@ public:
         return bIsAutomatable;
     }
 
+    void setDiscreteStepCount(int numberOfSteps) {
+        discreteStepCount = numberOfSteps >= 2 ? numberOfSteps : 0;
+    }
+
+    int getNumSteps() const override {
+        return discreteStepCount > 0
+            ? discreteStepCount : AudioProcessorParameter::getNumSteps();
+    }
+
+    bool isDiscrete() const override {
+        return discreteStepCount > 0;
+    }
+
 private:
-    static int paramIndexCounter;
     float pfm2MinValue;
     float valueMultiplier;
     int nrpnParam;
-    int paramIndex;
     float bias;
     String componentName;
     String oldXmlName; // To save XML for compatibility
     NormalisableRange<float> range;
     float value, defaultValue;
-    Pfm2AudioProcessor* audioProcessor;
+    Pfm2AudioProcessor* audioProcessor = nullptr;
     bool sendRealValue;
     float rangeFloat;
     bool bIsAutomatable;
+    int discreteStepCount;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidifiedFloatParameter)
 };

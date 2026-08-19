@@ -31,10 +31,13 @@
 
 
 struct Nrpn {
-	char paramMSB;
-	char paramLSB;
-	char valueMSB;
-	char valueLSB;
+	uint8 paramMSB = 0;
+	uint8 paramLSB = 0;
+	uint8 valueMSB = 0;
+	uint8 valueLSB = 0;
+	bool hasParamMSB = false;
+	bool hasParamLSB = false;
+	bool hasValueMSB = false;
 };
 
 
@@ -43,7 +46,7 @@ class Pfm2AudioProcessorEditor;
 //==============================================================================
 /**
 */
-class Pfm2AudioProcessor : public AudioProcessor, public MidiInputCallback
+class Pfm2AudioProcessor : public AudioProcessor, public MidiInputCallback, private AsyncUpdater
 {
 public:
 	//==============================================================================
@@ -63,7 +66,7 @@ public:
 	//==============================================================================
 	const String getName() const;
 
-	void setParameter(int index, float newValue);
+	void hostParameterChanged(int index);
 
 	bool acceptsMidi() const;
 	bool producesMidi() const;
@@ -82,7 +85,7 @@ public:
 	void setStateInformation(const void* data, int sizeInBytes);
 
 
-	void handleIncomingNrpn(int param, int value, int forceIndex = -1);
+	void handleIncomingNrpn(int param, int value);
 	// Parameter observer
 	bool isRealtimePriority() const;
 	void onParameterUpdated(AudioProcessorParameter *parameter);
@@ -92,13 +95,15 @@ public:
 	void flushAllParametrsToNrpn();
 	void sendNrpnPresetName();
 	void setPresetName(String newName);
-	String getPresetName() { return presetName;  }
-    void editorClosed();
+	String getPresetName() const;
+	void editorClosed(Pfm2AudioProcessorEditor* editor);
+	void editorResized(int width, int height) noexcept;
+	LookAndFeel* getEditorLookAndFeel() const { return myLookAndFeel; }
 
 	void addMidifiedParameter(MidifiedFloatParameter *param);
-	void flushMidiOut();
 
 	void parameterUpdatedForUI(int p);
+	void consumePendingUiParameterUpdates(std::unordered_set<String>& updates);
 	void handleIncomingMidiMessage(MidiInput* source, const MidiMessage &message);
 	void handlePartialSysexMessage(MidiInput* source, const uint8 *messageData, int numBytesSoFar, double timestamp);
 	void choseNewMidiDevice();
@@ -108,21 +113,45 @@ public:
 	float getRealValueForPfmBank(int param);
 	void setPfmType(int pt);
 	int getPfmType() { return pfmType;  }
+	uint64_t getDroppedOutputEventCount() const noexcept;
+	uint64_t getDroppedIncomingNrpnEventCount() const noexcept {
+		return droppedIncomingNrpnEvents.load(std::memory_order_relaxed);
+	}
 
 private:
-	void sendMidiForParameter(int paramIndex, int nrpnValue, int forceIndex);
-	int nrpmIndex[2048];
-	int nrpmIndexPfm3[2048];
-	int parameterIndex;
+	static constexpr int maximumPresetNameLength = 12;
+	struct IncomingNrpnEvent
+	{
+		int parameter = 0;
+		int value = 0;
+	};
+
+	static constexpr int incomingNrpnQueueCapacity = 4096;
+	static constexpr int maximumPendingUiParameters = 1024;
+	static constexpr int pendingUiWordCount = maximumPendingUiParameters / 64;
+	void queueIncomingNrpn(int parameter, int value) noexcept;
+	void handleAsyncUpdate() override;
+	void clearPendingUiParameterUpdate(int parameterIndex) noexcept;
+	void requestEditorStateUpdate() noexcept;
+	void sendMidiForParameter(int paramIndex, int nrpnValue);
+	String presetNameWithCharacter(int characterIndex, int characterValue) const;
+	void queueParameterNrpn(const MidifiedFloatParameter* parameter);
+	static constexpr int nrpnLookupSize = 2048;
+	int nrpmIndex[nrpnLookupSize];
+	int nrpmIndexPfm3[nrpnLookupSize];
+	mutable CriticalSection presetNameLock;
 	String presetName;
-	int currentMidiChannel;
-	int pfmType;
-	MidiBuffer midiOutBuffer;
-	MidiBuffer newMidiNotes;
+	std::atomic<bool> pendingEditorStateUpdate { false };
+	std::atomic<int> currentMidiChannel { 1 };
+	std::atomic<int> pfmType { 1 };
+	AbstractFifo incomingNrpnFifo { incomingNrpnQueueCapacity };
+	std::array<IncomingNrpnEvent, incomingNrpnQueueCapacity> incomingNrpnQueue;
+	std::atomic<uint64_t> droppedIncomingNrpnEvents { 0 };
+	std::array<std::atomic<uint64_t>, pendingUiWordCount> pendingUiParameterUpdates;
 	// Shared by all plugin instances
 	SharedResourcePointer<Pfm2MidiDevice> pfm2MidiDevice;
-    int editorWidth;
-    int editorHeight;
+    std::atomic<int> editorWidth { 0 };
+    std::atomic<int> editorHeight { 0 };
 
 	// Those ones are important
 	MidifiedFloatParameter *playModeParam, *voicesParam;

@@ -61,8 +61,8 @@ public:
     void mouseWheelMove(const MouseEvent& e, const MouseWheelDetails& wheel) override;
 
     // Can be implemented to deal with point value modification
-	virtual void newXValue(int draggingPointIndex, float newX) {};
-	virtual void newYValue(int draggingPointIndex, float newY) {};
+	virtual void newXValue(int, float) {}
+	virtual void newYValue(int, float) {}
 
 	int getNumberOfPoints() const;
 	float getX(int index) const;
@@ -121,26 +121,27 @@ private:
 class EnveloppePoint {
 	friend class LinkedListPointer<EnveloppePoint>;
 public:
-	EnveloppePoint(EnveloppeAbstract* myEnv, int index, float xMin, float xMax, float yMin, float yMax) {
+	EnveloppePoint(EnveloppeAbstract* owner, int pointIndex,
+		float minimumX, float maximumX, float minimumY, float maximumY) {
 		this->x = 0.0f;
 		this->y = 0.0f;
-		this->xMin = xMin;
-		this->yMin = yMin;
-		this->xMax = xMax;
-		this->yMax = yMax;
+		this->xMin = minimumX;
+		this->yMin = minimumY;
+		this->xMax = maximumX;
+		this->yMax = maximumY;
 		this->positionInComponentX = 0;
 		this->positionInComponentY = 0;
-		this->myEnv = myEnv;
-		this->index = index;
+		this->myEnv = owner;
+		this->index = pointIndex;
 	}
-	void setX(float x, bool notification = true) {
-		this->x = x > xMax ? xMax : (x < xMin ? xMin : x);
+	void setX(float newX, bool notification = true) {
+		this->x = newX > xMax ? xMax : (newX < xMin ? xMin : newX);
 		if (notification) {
 			this->myEnv->newXValue(index, this->x);
 		}
 	}
-	void setY(float y, bool notification = true) {
-		this->y = y > yMax ? yMax : (y < yMin ? yMin : y);
+	void setY(float newY, bool notification = true) {
+		this->y = newY > yMax ? yMax : (newY < yMin ? yMin : newY);
 		if (notification) {
 			this->myEnv->newYValue(index, this->y);
 		}

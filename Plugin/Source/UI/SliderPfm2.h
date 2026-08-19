@@ -28,7 +28,7 @@ public:
 	SliderPfm2(const String& componentName) : Slider(componentName) {}
 	~SliderPfm2() {}
 
-    void mouseWheelMove (const MouseEvent& e, const MouseWheelDetails& wheel) override
+    void mouseWheelMove (const MouseEvent&, const MouseWheelDetails& wheel) override
     {
         if (!isEnabled() || !isVisible()) {
             return;

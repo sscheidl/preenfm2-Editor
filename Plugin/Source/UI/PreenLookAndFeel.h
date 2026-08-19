@@ -26,6 +26,7 @@ public:
 	preenfmLookAndFeel();
 
 	Font getTextButtonFont(TextButton&, int buttonHeight) override;
+	int getTabButtonBestWidth(TabBarButton&, int tabDepth) override;
 	void drawButtonBackground(Graphics&, Button&, const Colour& backgroundColour,
 		bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
 	void drawGroupComponentOutline(Graphics&, int width, int height, const String& text,

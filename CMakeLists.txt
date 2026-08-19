@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(PreenfmEditor
-    VERSION 4.0.0
+    VERSION 4.0.1
     DESCRIPTION "MIDI editor for the preenfm2 and preenfm3 synthesizers"
     LANGUAGES C CXX)
 
@@ -77,9 +77,7 @@ target_sources(PreenfmEditor PRIVATE
     Plugin/Source/UI/SliderPfm2.h
     Plugin/Source/UI/StepSequencer.cpp
     Plugin/Source/UI/StepSequencer.h
-    Plugin/Source/UI/StepSequencerListener.h
-    Plugin/Source/UI/png/AlgoPNG.cpp
-    Plugin/Source/UI/png/AlgoPNG.h)
+    Plugin/Source/UI/StepSequencerListener.h)
 
 target_include_directories(PreenfmEditor PRIVATE
     Plugin/Source

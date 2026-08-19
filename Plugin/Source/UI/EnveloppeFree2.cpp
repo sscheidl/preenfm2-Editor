@@ -85,7 +85,7 @@ void EnveloppeFree2::paint(Graphics& g)
 
 
 
-void EnveloppeFree2::comboBoxChanged(ComboBox* comboBoxThatHasChanged) {
+void EnveloppeFree2::comboBoxChanged(ComboBox*) {
 }
 
 void EnveloppeFree2::resized() {
@@ -96,7 +96,7 @@ const char ** EnveloppeFree2::getPointSuffix() const {
 	return __enveloppeFree2PointSuffix;
 }
 
-const char* EnveloppeFree2::getPointSuffix(int pointNumber, bool isX) const {
+const char* EnveloppeFree2::getPointSuffix(int pointNumber, bool) const {
 	return __enveloppeFree2PointSuffix[(pointNumber - 1)];
 }
 

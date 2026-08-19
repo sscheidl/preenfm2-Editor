@@ -26,6 +26,7 @@ Pfm2AudioProcessorEditor::Pfm2AudioProcessorEditor(Pfm2AudioProcessor* ownerFilt
 	: AudioProcessorEditor(ownerFilter)
 {
 	this->ownerFilter = ownerFilter;
+	setLookAndFeel(ownerFilter->getEditorLookAndFeel());
 	addAndMakeVisible(mainTabs = new MainTabs());
 	mainTabs->buildParameters(getAudioProcessor());
 	setResizable(true, true);
@@ -40,12 +41,13 @@ Pfm2AudioProcessorEditor::Pfm2AudioProcessorEditor(Pfm2AudioProcessor* ownerFilt
 
 Pfm2AudioProcessorEditor::~Pfm2AudioProcessorEditor()
 {
-	this->ownerFilter->editorClosed();
+	this->ownerFilter->editorClosed(this);
+	setLookAndFeel(nullptr);
 	delete mainTabs;
 }
 
 //==============================================================================
-void Pfm2AudioProcessorEditor::paint(Graphics& g)
+void Pfm2AudioProcessorEditor::paint(Graphics&)
 {
 }
 
@@ -53,39 +55,25 @@ void Pfm2AudioProcessorEditor::paint(Graphics& g)
 void Pfm2AudioProcessorEditor::resized() {
 	if (mainTabs != nullptr)
 		mainTabs->setBounds(getLocalBounds());
+	ownerFilter->editorResized(getWidth(), getHeight());
 }
 
-
-void Pfm2AudioProcessorEditor::updateUIWith(std::unordered_set<String> &paramSet) {
-	this->parametersToUpdateMutex.lock();
-	for (std::unordered_set<String>::iterator it = paramSet.begin(); it != paramSet.end(); ++it) {
-		this->parametersToUpdate.insert(*it);
-	}
-	this->parametersToUpdateMutex.unlock();
-}
-
-
-void Pfm2AudioProcessorEditor::removeParamToUpdateUI(String paramName) {
-	this->parametersToUpdateMutex.lock();
-	if (this->parametersToUpdate.count(paramName) > 0) {
-		this->parametersToUpdate.erase(paramName);
-	}
-	this->parametersToUpdateMutex.unlock();
-}
 
 void Pfm2AudioProcessorEditor::timerCallback() {
-	if (this->parametersToUpdate.size() > 0) {
-		std::unordered_set<String> newSet;
-		this->parametersToUpdateMutex.lock();
-		newSet.swap(this->parametersToUpdate);
-		this->parametersToUpdateMutex.unlock();
+	std::unordered_set<String> newSet;
+	ownerFilter->consumePendingUiParameterUpdates(newSet);
+	if (!newSet.empty()) {
 		mainTabs->updateUI(newSet);
 	}
-}
 
-
-void Pfm2AudioProcessorEditor::setMidiOutBuffer(MidiBuffer *midiOutBuffer) {
-	mainTabs->setMidiOutBuffer(midiOutBuffer);
+	const uint64_t droppedOutput = ownerFilter->getDroppedOutputEventCount();
+	const uint64_t droppedInput = ownerFilter->getDroppedIncomingNrpnEventCount();
+	if (droppedOutput != lastDroppedOutputEventCount
+		|| droppedInput != lastDroppedIncomingNrpnEventCount) {
+		lastDroppedOutputEventCount = droppedOutput;
+		lastDroppedIncomingNrpnEventCount = droppedInput;
+		mainTabs->setMidiQueueWarning(droppedOutput, droppedInput);
+	}
 }
 
 

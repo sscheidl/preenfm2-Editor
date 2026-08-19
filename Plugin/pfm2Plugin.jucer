@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="nWJaEw" name="pfmEditor" projectType="audioplug" version="4.0.0"
+<JUCERPROJECT id="nWJaEw" name="pfmEditor" projectType="audioplug" version="4.0.1"
               bundleIdentifier="com.ixox.preenfmEditor" includeBinaryInAppConfig="1"
               buildVST="1" buildVST3="1" buildAU="1" buildRTAS="0" buildAAX="0"
               pluginName="PreenFM+" pluginDesc="PreenFM+ MIDI editor"
@@ -48,8 +48,6 @@
         <FILE id="bLaZYV" name="PanelOfComponents.h" compile="0" resource="0"
               file="Source/UI/PanelOfComponents.h"/>
         <GROUP id="{B5F0E8C9-02ED-16C9-125E-2FED5E9292EB}" name="png">
-          <FILE id="jVOlAd" name="AlgoPNG.cpp" compile="1" resource="0" file="Source/UI/png/AlgoPNG.cpp"/>
-          <FILE id="OoxLra" name="AlgoPNG.h" compile="0" resource="0" file="Source/UI/png/AlgoPNG.h"/>
         </GROUP>
         <FILE id="QpB5g6" name="PreenLookAndFeel.cpp" compile="1" resource="0"
               file="Source/UI/PreenLookAndFeel.cpp"/>

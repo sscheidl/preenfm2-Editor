@@ -63,7 +63,13 @@ preenfmLookAndFeel::preenfmLookAndFeel() : LookAndFeel_V4() {
 
 Font preenfmLookAndFeel::getTextButtonFont(TextButton&, int buttonHeight)
 {
-	return Font(jmin(15.0f, buttonHeight * 0.58f), Font::plain);
+	return Font(FontOptions(jmin(15.0f, buttonHeight * 0.58f), Font::plain)
+		.withMetricsKind(TypefaceMetricsKind::legacy));
+}
+
+int preenfmLookAndFeel::getTabButtonBestWidth(TabBarButton& button, int tabDepth)
+{
+	return LookAndFeel_V4::getTabButtonBestWidth(button, tabDepth) + 18;
 }
 
 void preenfmLookAndFeel::drawButtonBackground(Graphics& g, Button& button,
@@ -91,14 +97,16 @@ void preenfmLookAndFeel::drawGroupComponentOutline(Graphics& g, int width, int h
 {
 	const auto bounds = Rectangle<float>(0.5f, 8.0f,
 		static_cast<float>(width) - 1.0f, static_cast<float>(height) - 8.5f);
-	g.setColour(surface.withAlpha(0.42f));
+	const auto border = group.findColour(GroupComponent::outlineColourId);
+	g.setColour(surface.interpolatedWith(border, 0.11f));
 	g.fillRoundedRectangle(bounds, 8.0f);
-	g.setColour(group.findColour(GroupComponent::outlineColourId));
+	g.setColour(border);
 	g.drawRoundedRectangle(bounds, 8.0f, 1.0f);
 
 	if (label.isNotEmpty())
 	{
-		g.setFont(Font(13.0f, Font::bold));
+		g.setFont(Font(FontOptions(13.0f, Font::bold)
+			.withMetricsKind(TypefaceMetricsKind::legacy)));
 		const auto textWidth = jmin(width - 24,
 			GlyphArrangement::getStringWidthInt(g.getCurrentFont(), label) + 14);
 		g.setColour(background);
@@ -111,8 +119,13 @@ void preenfmLookAndFeel::drawGroupComponentOutline(Graphics& g, int width, int h
 void preenfmLookAndFeel::drawTabButton(TabBarButton& button, Graphics& g,
 	bool isMouseOver, bool isMouseDown)
 {
-	auto bounds = button.getLocalBounds().toFloat().reduced(2.0f, 3.0f);
-	auto fill = button.isFrontTab() ? accent.darker(0.55f) : surface;
+	static const Colour tabColours[] = {
+		Colour(0xff17323a), Colour(0xff202b46), Colour(0xff29303b)
+	};
+	auto bounds = button.getLocalBounds().toFloat().reduced(5.0f, 4.0f);
+	auto fill = tabColours[jlimit(0, 2, button.getIndex())];
+	if (button.isFrontTab())
+		fill = fill.brighter(0.16f);
 	if (isMouseDown)
 		fill = fill.darker(0.15f);
 	else if (isMouseOver)
@@ -120,11 +133,8 @@ void preenfmLookAndFeel::drawTabButton(TabBarButton& button, Graphics& g,
 
 	g.setColour(fill);
 	g.fillRoundedRectangle(bounds, 6.0f);
-	if (button.isFrontTab())
-	{
-		g.setColour(accentBright);
-		g.fillRoundedRectangle(bounds.removeFromBottom(2.5f), 1.25f);
-	}
+	g.setColour((button.isFrontTab() ? accentBright : outline).withAlpha(0.9f));
+	g.drawRoundedRectangle(bounds, 6.0f, button.isFrontTab() ? 1.4f : 1.0f);
 
 	drawTabButtonText(button, g, isMouseOver, isMouseDown);
 }
@@ -189,6 +199,7 @@ void preenfmLookAndFeel::drawLinearSlider(Graphics& g, int x, int y, int width, 
 	float maxSliderPos,
 	const Slider::SliderStyle style, Slider& slider)
 {
+	ignoreUnused(minSliderPos, maxSliderPos, style);
 
 	const auto track = outline;
 	const auto fill = slider.isEnabled() ? accentBright : textMuted.withAlpha(0.45f);
@@ -210,16 +221,19 @@ void preenfmLookAndFeel::drawLinearSlider(Graphics& g, int x, int y, int width, 
 	g.strokePath(backgroundTrack, PathStrokeType(trackWidth, PathStrokeType::curved, PathStrokeType::butt));
 
 	Path valueTrack;
-	juce::Point<float> minPoint, maxPoint;
-	juce::Point<float> midPoint = (endPoint + startPoint) / 2;
 
 	const auto kx = slider.isHorizontal() ? sliderPos : (x + width * 0.5f);
 	const auto ky = slider.isHorizontal() ? (y + height * 0.5f) : sliderPos;
+	const juce::Point<float> maxPoint { kx, ky };
+	juce::Point<float> valueOrigin = startPoint;
 
-	minPoint = startPoint;
-	maxPoint = { kx, ky };
+	if (slider.getMinimum() < 0.0 && slider.getMaximum() > 0.0) {
+		const float zeroProportion = static_cast<float>(
+			slider.valueToProportionOfLength(0.0));
+		valueOrigin = startPoint + (endPoint - startPoint) * zeroProportion;
+	}
 
-	valueTrack.startNewSubPath(midPoint);
+	valueTrack.startNewSubPath(valueOrigin);
 	valueTrack.lineTo(maxPoint);
 
 	float knobWidth = trackWidth;
@@ -264,7 +278,8 @@ void preenfmLookAndFeel::drawComboBox(Graphics& g, int width, int height, bool,
 
 Font preenfmLookAndFeel::getComboBoxFont(ComboBox& box)
 {
-	return Font(jmin(14.0f, box.getHeight() * 0.85f));
+	return Font(FontOptions(jmin(14.0f, box.getHeight() * 0.85f))
+		.withMetricsKind(TypefaceMetricsKind::legacy));
 }
 
 

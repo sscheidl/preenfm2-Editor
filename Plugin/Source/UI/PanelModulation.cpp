@@ -149,11 +149,11 @@ struct NameAndId destNameInit[] = {
 PanelModulation::PanelModulation ()
 {
     //[Constructor_pre] You can add your own custom stuff here..
-	sourceList = new ListProperty("sources", ".sources.xml");
+	sourceList = std::make_unique<ListProperty>("sources", ".sources.xml");
 	sourceList->init(sourceNameInit);
 	NameAndId* sourcesNameAndId = sourceList->getList();
 
-	destList = new ListProperty("dest", ".dest.xml");
+	destList = std::make_unique<ListProperty>("dest", ".dest.xml");
 	destList->init(destNameInit);
 	NameAndId* destNameAndId = destList->getList();
 
@@ -162,46 +162,46 @@ PanelModulation::PanelModulation ()
     matrixGroup.reset (new juce::GroupComponent ("matrix group",
                                                  TRANS("Matrix")));
     addAndMakeVisible (matrixGroup.get());
-    matrixGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff749fad));
-    matrixGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff749fad));
+    matrixGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff7383c5));
+    matrixGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff9da9e0));
 
     lfoGroup.reset (new juce::GroupComponent ("lfo group",
                                               juce::String()));
     addAndMakeVisible (lfoGroup.get());
-    lfoGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff749fad));
-    lfoGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff749fad));
+    lfoGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff35aeb4));
+    lfoGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff69cdd1));
 
     env1Group.reset (new juce::GroupComponent ("env 1 group",
                                                TRANS("Free Enveloppe 1")));
     addAndMakeVisible (env1Group.get());
-    env1Group->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff749fad));
-    env1Group->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff749fad));
+    env1Group->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff526a7c));
+    env1Group->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff86a0b3));
 
     env2Group.reset (new juce::GroupComponent ("env 2 group",
                                                TRANS("Free Enveloppe 2")));
     addAndMakeVisible (env2Group.get());
-    env2Group->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff749fad));
-    env2Group->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff749fad));
+    env2Group->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff62739d));
+    env2Group->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff95a4cc));
 
     stepSeqGroup.reset (new juce::GroupComponent ("step sequencer group",
                                                   juce::String()));
     addAndMakeVisible (stepSeqGroup.get());
-    stepSeqGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff749fad));
-    stepSeqGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff749fad));
+    stepSeqGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff8a7654));
+    stepSeqGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xffc7ad79));
 
 
     //[UserPreSize]
 
 	// LFO
 	for (int k = 0; k < NUMBER_OF_LFO; k++) {
-		addAndMakeVisible(lfoButton[k] = new TextButton("lfo button"));
+		addAndMakeVisible((lfoButton[k] = std::make_unique<TextButton>("lfo button")).get());
 		lfoButton[k]->setButtonText("LFO " + String(k + 1));
 		lfoButton[k]->addListener(this);
 		lfoButton[k]->setClickingTogglesState(true);
 		lfoButton[k]->setRadioGroupId(4243);
 		lfoButton[k]->setConnectedEdges((k != 0 ? Button::ConnectedOnLeft : 0) | (k != NUMBER_OF_LFO - 1 ? Button::ConnectedOnRight : 0));
 
-		addAndMakeVisible(lfoShape[k] = new ComboBox("LFO" + String(k + 1) + " Shape"));
+		addAndMakeVisible((lfoShape[k] = std::make_unique<ComboBox>("LFO" + String(k + 1) + " Shape")).get());
 		lfoShape[k]->setEditableText(false);
 		lfoShape[k]->setJustificationType(Justification::left);
 		lfoShape[k]->setColour(ComboBox::buttonColourId, Colours::blue);
@@ -217,7 +217,7 @@ PanelModulation::PanelModulation ()
 		lfoShape[k]->setSelectedId(1);
 		lfoShape[k]->addListener(this);
 
-		addAndMakeVisible(lfoPhase[k] = new SliderPfm2("LFO" + String(k + 1) + " Phase"));
+		addAndMakeVisible((lfoPhase[k] = std::make_unique<SliderPfm2>("LFO" + String(k + 1) + " Phase")).get());
 		lfoPhase[k]->setRange(0, 1.0f, .01f);
 		lfoPhase[k]->setSliderStyle(Slider::RotaryVerticalDrag);
 		lfoPhase[k]->setTextBoxStyle(Slider::TextBoxBelow, false, 40, 16);
@@ -226,7 +226,7 @@ PanelModulation::PanelModulation ()
 		lfoPhase[k]->addListener(this);
 
 
-		addAndMakeVisible(lfoExtMidiSync[k] = new ComboBox("LFO" + String(k + 1) + " External Sync"));
+		addAndMakeVisible((lfoExtMidiSync[k] = std::make_unique<ComboBox>("LFO" + String(k + 1) + " External Sync")).get());
 		lfoExtMidiSync[k]->setEditableText(false);
 		lfoExtMidiSync[k]->setJustificationType(Justification::left);
 		lfoExtMidiSync[k]->setColour(ComboBox::buttonColourId, Colours::blue);
@@ -244,7 +244,7 @@ PanelModulation::PanelModulation ()
 		lfoExtMidiSync[k]->setSelectedId(9990);
 		lfoExtMidiSync[k]->addListener(this);
 
-		addAndMakeVisible(lfoFrequency[k] = new SliderPfm2("LFO" + String(k + 1) + " Frequency"));
+		addAndMakeVisible((lfoFrequency[k] = std::make_unique<SliderPfm2>("LFO" + String(k + 1) + " Frequency")).get());
 		lfoFrequency[k]->setRange(0, 99.9f, .01f);
 		lfoFrequency[k]->setSliderStyle(Slider::RotaryVerticalDrag);
 		lfoFrequency[k]->setTextBoxStyle(Slider::TextBoxBelow, false, 40, 16);
@@ -252,7 +252,7 @@ PanelModulation::PanelModulation ()
 		lfoFrequency[k]->setValue(3.0f, dontSendNotification);
 		lfoFrequency[k]->addListener(this);
 
-		addAndMakeVisible(lfoBias[k] = new SliderPfm2("LFO" + String(k + 1) + " Bias"));
+		addAndMakeVisible((lfoBias[k] = std::make_unique<SliderPfm2>("LFO" + String(k + 1) + " Bias")).get());
 		lfoBias[k]->setRange(-1.0f, 1.0f, .01f);
 		lfoBias[k]->setSliderStyle(Slider::LinearVertical);
 		lfoBias[k]->setTextBoxStyle(Slider::TextBoxBelow, false, 40, 16);
@@ -260,7 +260,7 @@ PanelModulation::PanelModulation ()
 		lfoBias[k]->setValue(0.0f, dontSendNotification);
 		lfoBias[k]->addListener(this);
 
-		addAndMakeVisible(lfoKSync[k] = new SliderPfm2("LFO" + String(k + 1) + " KeySync time"));
+		addAndMakeVisible((lfoKSync[k] = std::make_unique<SliderPfm2>("LFO" + String(k + 1) + " KeySync time")).get());
 		lfoKSync[k]->setRange(0.0f, 16.0f, .01f);
 		lfoKSync[k]->setSliderStyle(Slider::RotaryVerticalDrag);
 		lfoKSync[k]->setTextBoxStyle(Slider::TextBoxBelow, false, 40, 16);
@@ -268,7 +268,7 @@ PanelModulation::PanelModulation ()
 		lfoKSync[k]->setValue(0.0f, dontSendNotification);
 		lfoKSync[k]->addListener(this);
 
-		addAndMakeVisible(lfoKsynOnOff[k] = new ComboBox("LFO" + String(k + 1) + " KeySync"));
+		addAndMakeVisible((lfoKsynOnOff[k] = std::make_unique<ComboBox>("LFO" + String(k + 1) + " KeySync")).get());
 		lfoKsynOnOff[k]->setEditableText(false);
 		lfoKsynOnOff[k]->setJustificationType(Justification::left);
 		lfoKsynOnOff[k]->setColour(ComboBox::buttonColourId, Colours::blue);
@@ -282,21 +282,21 @@ PanelModulation::PanelModulation ()
 
 	lfoButton[0]->setToggleState(true, sendNotification);
 
-	addAndMakeVisible(lfoPhaseLabel = new Label("LFO phase label", "Phase"));
+	addAndMakeVisible((lfoPhaseLabel = std::make_unique<Label>("LFO phase label", "Phase")).get());
 	lfoPhaseLabel->setJustificationType(Justification::centredTop);
 
-	addAndMakeVisible(lfoFrequencyLabel = new Label("LFO freq label", "Frequency"));
+	addAndMakeVisible((lfoFrequencyLabel = std::make_unique<Label>("LFO freq label", "Frequency")).get());
 	lfoFrequencyLabel->setJustificationType(Justification::centredTop);
 
-	addAndMakeVisible(lfoBiasLabel = new Label("LFO bias label", "Bias"));
+	addAndMakeVisible((lfoBiasLabel = std::make_unique<Label>("LFO bias label", "Bias")).get());
 	lfoBiasLabel->setJustificationType(Justification::centredTop);
 
-	addAndMakeVisible(lfoKSynLabel = new Label("LFO ksyn label", "Note Sync"));
+	addAndMakeVisible((lfoKSynLabel = std::make_unique<Label>("LFO ksyn label", "Note Sync")).get());
 	lfoKSynLabel->setJustificationType(Justification::centredTop);
 
 
 	for (int k = 0; k < NUMBER_OF_STEP_SEQ; k++) {
-		addAndMakeVisible(stepSeqExtMidiSync[k] = new ComboBox("Step Seq " + String(k + 1) + " External Sync"));
+		addAndMakeVisible((stepSeqExtMidiSync[k] = std::make_unique<ComboBox>("Step Seq " + String(k + 1) + " External Sync")).get());
 		stepSeqExtMidiSync[k]->setEditableText(false);
 		stepSeqExtMidiSync[k]->setColour(ComboBox::buttonColourId, Colours::blue);
 		stepSeqExtMidiSync[k]->setJustificationType(Justification::left);
@@ -310,7 +310,7 @@ PanelModulation::PanelModulation ()
 		stepSeqExtMidiSync[k]->setSelectedId(1);
 		stepSeqExtMidiSync[k]->addListener(this);
 
-		addAndMakeVisible(stepSeqBPM[k] = new SliderPfm2("Step Seq " + String(k + 1) + " BPM"));
+		addAndMakeVisible((stepSeqBPM[k] = std::make_unique<SliderPfm2>("Step Seq " + String(k + 1) + " BPM")).get());
 		stepSeqBPM[k]->setRange(10, 240.0f, 1.0f);
 		stepSeqBPM[k]->setSliderStyle(Slider::RotaryVerticalDrag);
 		stepSeqBPM[k]->setTextBoxStyle(Slider::TextBoxLeft, false, 35, 16);
@@ -318,7 +318,7 @@ PanelModulation::PanelModulation ()
 		stepSeqBPM[k]->setValue(3.0f, dontSendNotification);
 		stepSeqBPM[k]->addListener(this);
 
-		addAndMakeVisible(stepSeqGate[k] = new SliderPfm2("Step Seq " + String(k + 1) + " Gate"));
+		addAndMakeVisible((stepSeqGate[k] = std::make_unique<SliderPfm2>("Step Seq " + String(k + 1) + " Gate")).get());
 		stepSeqGate[k]->setRange(0.0f, 1.0f, 0.01f);
 		stepSeqGate[k]->setSliderStyle(Slider::LinearHorizontal);
 		stepSeqGate[k]->setTextBoxStyle(Slider::TextBoxBelow, false, 35, 16);
@@ -326,42 +326,42 @@ PanelModulation::PanelModulation ()
 		stepSeqGate[k]->setValue(0.5f, dontSendNotification);
 		stepSeqGate[k]->addListener(this);
 
-		addAndMakeVisible(stepSequencer[k] = new StepSequencer(16, 16, 100 /* TOC CHANGE !!!!!*/));
+		addAndMakeVisible((stepSequencer[k] = std::make_unique<StepSequencer>(16, 15)).get());
 		stepSequencer[k]->setBounds(16, 368, 500, 120);
 		stepSequencer[k]->setName("Step Seq " + String(k + 1));
 		stepSequencer[k]->addListener(this);
 
-		stepSeqButton[k] = new TextButton("step sequencer button");
+		stepSeqButton[k] = std::make_unique<TextButton>("step sequencer button");
 		stepSeqButton[k]->setBounds(16 + 80 * k, 336, 80, 20);
 		stepSeqButton[k]->setButtonText(TRANS("Sequencer " + String(k + 1)));
 		stepSeqButton[k]->addListener(this);
 		stepSeqButton[k]->setClickingTogglesState(true);
 		stepSeqButton[k]->setRadioGroupId(4242);
 		stepSeqButton[k]->setConnectedEdges((k != 0 ? Button::ConnectedOnLeft : 0) | (k != NUMBER_OF_STEP_SEQ - 1 ? Button::ConnectedOnRight : 0));
-		addAndMakeVisible(stepSeqButton[k]);
+		addAndMakeVisible(stepSeqButton[k].get());
 	}
 	stepSeqButton[0]->setToggleState(true, sendNotification);
 
-	addAndMakeVisible(stepSeqBPMLabel = new Label("step seq label", "BPM"));
+	addAndMakeVisible((stepSeqBPMLabel = std::make_unique<Label>("step seq label", "BPM")).get());
 	stepSeqBPMLabel->setJustificationType(Justification::centred);
 
-	addAndMakeVisible(stepSeqGateLabel = new Label("step seq get label", "Gate"));
+	addAndMakeVisible((stepSeqGateLabel = std::make_unique<Label>("step seq get label", "Gate")).get());
 	stepSeqBPMLabel->setJustificationType(Justification::centred);
 
 
 	for (int r = 0; r < NUMBER_OF_MATRIX_ROW; r++) {
-		addAndMakeVisible(matrixRowLabel[r] = new Label(String("matrix label ") + String(r + 1), String(r + 1)));
+		addAndMakeVisible((matrixRowLabel[r] = std::make_unique<Label>(String("matrix label ") + String(r + 1), String(r + 1))).get());
 		matrixRowLabel[r]->setJustificationType(Justification::centred);
 
-		addAndMakeVisible(matrixMultipler[r] = new SliderPfm2("Mtx" + String(r + 1) + " Multiplier"));
+		addAndMakeVisible((matrixMultipler[r] = std::make_unique<SliderPfm2>("Mtx" + String(r + 1) + " Multiplier")).get());
 		matrixMultipler[r]->setRange(-10.0f, 10.0f, .01f);
 		matrixMultipler[r]->setSliderStyle(Slider::RotaryVerticalDrag);
-		matrixMultipler[r]->setTextBoxStyle(Slider::TextBoxLeft, false, 40, 18);
+		matrixMultipler[r]->setTextBoxStyle(Slider::TextBoxLeft, false, 36, 16);
 		matrixMultipler[r]->setDoubleClickReturnValue(true, 0.0f);
 		matrixMultipler[r]->setValue(0.0f, dontSendNotification);
 		matrixMultipler[r]->addListener(this);
 
-		addAndMakeVisible(matrixSource[r] = new ComboBox("Mtx" + String(r + 1) + " Source"));
+		addAndMakeVisible((matrixSource[r] = std::make_unique<ComboBox>("Mtx" + String(r + 1) + " Source")).get());
 		matrixSource[r]->setEditableText(false);
 		matrixSource[r]->setJustificationType(Justification::centred);
 		matrixSource[r]->setColour(ComboBox::buttonColourId, Colours::blue);
@@ -374,7 +374,7 @@ PanelModulation::PanelModulation ()
 		matrixSource[r]->setScrollWheelEnabled(true);
 		matrixSource[r]->addListener(this);
 
-		addAndMakeVisible(matrixDestination1[r] = new ComboBox("Mtx" + String(r + 1) + " Destination1"));
+		addAndMakeVisible((matrixDestination1[r] = std::make_unique<ComboBox>("Mtx" + String(r + 1) + " Destination1")).get());
 		matrixDestination1[r]->setEditableText(false);
 		matrixDestination1[r]->setJustificationType(Justification::centred);
 		matrixDestination1[r]->setColour(ComboBox::buttonColourId, Colours::blue);
@@ -387,7 +387,7 @@ PanelModulation::PanelModulation ()
 		matrixDestination1[r]->setScrollWheelEnabled(true);
 		matrixDestination1[r]->addListener(this);
 
-        addAndMakeVisible(matrixDestination2[r] = new ComboBox("Mtx" + String(r + 1) + " Destination2"));
+        addAndMakeVisible((matrixDestination2[r] = std::make_unique<ComboBox>("Mtx" + String(r + 1) + " Destination2")).get());
         matrixDestination2[r]->setEditableText(false);
         matrixDestination2[r]->setJustificationType(Justification::centred);
         matrixDestination2[r]->setColour(ComboBox::buttonColourId, Colours::blue);
@@ -401,15 +401,15 @@ PanelModulation::PanelModulation ()
         matrixDestination2[r]->addListener(this);
     }
 
-	addAndMakeVisible(enveloppeFree1 = new EnveloppeFree1(127));
+	addAndMakeVisible((enveloppeFree1 = std::make_unique<EnveloppeFree1>(127)).get());
 	enveloppeFree1->setName(TRANS("Free Env 1"));
 
-	addAndMakeVisible(enveloppeFree2 = new EnveloppeFree2(127));
+	addAndMakeVisible((enveloppeFree2 = std::make_unique<EnveloppeFree2>(127)).get());
 	enveloppeFree2->setName(TRANS("Free Env 2"));
 
-	addAndMakeVisible(enveloppeFree2LoopLabel = new Label("Freen Env 2 Loop label", "Loop"));
+	addAndMakeVisible((enveloppeFree2LoopLabel = std::make_unique<Label>("Freen Env 2 Loop label", "Loop")).get());
 
-	addAndMakeVisible(enveloppeFree2Loop = new ComboBox("Free Env 2 Loop"));
+	addAndMakeVisible((enveloppeFree2Loop = std::make_unique<ComboBox>("Free Env 2 Loop")).get());
 	enveloppeFree2Loop->setEditableText(false);
 	enveloppeFree2Loop->setJustificationType(Justification::centred);
 	enveloppeFree2Loop->addItem("None", 1);
@@ -450,20 +450,7 @@ void PanelModulation::paint (juce::Graphics& g)
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    {
-        int x = proportionOfWidth (0.5500f), y = 2, width = proportionOfWidth (0.4407f), height = getHeight() - 182;
-        juce::Colour fillColour1 = juce::Colour (0xff155163), fillColour2 = juce::Colour (0xff083543);
-        //[UserPaintCustomArguments] Customize the painting arguments here..
-        //[/UserPaintCustomArguments]
-        g.setGradientFill (juce::ColourGradient (fillColour1,
-                                             static_cast<float> (proportionOfWidth (0.9000f)) - static_cast<float> (proportionOfWidth (0.5500f)) + x,
-                                             static_cast<float> (proportionOfHeight (0.2500f)) - 2.0f + y,
-                                             fillColour2,
-                                             static_cast<float> (proportionOfWidth (0.6000f)) - static_cast<float> (proportionOfWidth (0.5500f)) + x,
-                                             static_cast<float> (proportionOfHeight (0.2500f)) - 2.0f + y,
-                                             true));
-        g.fillRect (x, y, width, height);
-    }
+    g.fillAll (juce::Colour (0xff0d1620));
 
     //[UserPaint] Add your own custom painting code here..
     //[/UserPaint]
@@ -474,50 +461,86 @@ void PanelModulation::resized()
     //[UserPreResize] Add your own custom resize code here..
     //[/UserPreResize]
 
-    matrixGroup->setBounds (proportionOfWidth (0.5977f), proportionOfHeight (0.0095f), proportionOfWidth (0.3949f), proportionOfHeight (0.9794f));
-    lfoGroup->setBounds (proportionOfWidth (0.0000f), proportionOfHeight (0.0095f), proportionOfWidth (0.5903f), proportionOfHeight (0.2298f));
-    env1Group->setBounds (proportionOfWidth (0.0000f), proportionOfHeight (0.2441f), proportionOfWidth (0.5903f), proportionOfHeight (0.1854f));
-    env2Group->setBounds (proportionOfWidth (0.0000f), proportionOfHeight (0.4295f), proportionOfWidth (0.5903f), proportionOfHeight (0.1854f));
-    stepSeqGroup->setBounds (proportionOfWidth (0.0000f), proportionOfHeight (0.6101f), proportionOfWidth (0.5903f), proportionOfHeight (0.3803f));
+    auto content = getLocalBounds().reduced (10, 9);
+    constexpr int moduleGap = 8;
+    auto leftColumn = content.removeFromLeft (roundToInt (content.getWidth() * 0.585f));
+    content.removeFromLeft (moduleGap);
+    auto matrixBounds = content;
+
+    const int lfoHeight = roundToInt (leftColumn.getHeight() * 0.225f);
+    const int envelopeHeight = roundToInt (leftColumn.getHeight() * 0.185f);
+    auto lfoBounds = leftColumn.removeFromTop (lfoHeight);
+    leftColumn.removeFromTop (moduleGap);
+    auto env1Bounds = leftColumn.removeFromTop (envelopeHeight);
+    leftColumn.removeFromTop (moduleGap);
+    auto env2Bounds = leftColumn.removeFromTop (envelopeHeight);
+    leftColumn.removeFromTop (moduleGap);
+    auto stepBounds = leftColumn;
+
+    matrixGroup->setBounds (matrixBounds);
+    lfoGroup->setBounds (lfoBounds);
+    env1Group->setBounds (env1Bounds);
+    env2Group->setBounds (env2Bounds);
+    stepSeqGroup->setBounds (stepBounds);
     //[UserResized] Add your own custom resize handling here..
 
-	lfoPhaseLabel->setBounds(proportionOfWidth(0.48f), proportionOfHeight(0.04f), proportionOfWidth(0.080f), 20);
-	lfoFrequencyLabel->setBounds(proportionOfWidth(0.21f), proportionOfHeight(0.04f), proportionOfWidth(0.080f), 20);
-	lfoBiasLabel->setBounds(proportionOfWidth(0.30f), proportionOfHeight(0.04f), proportionOfWidth(0.080f), 20);
-	lfoKSynLabel->setBounds(proportionOfWidth(0.39f), proportionOfHeight(0.04f), proportionOfWidth(0.080f), 20);
+	const auto lfoColumnX = [&lfoBounds] (float proportion)
+	{
+		return lfoBounds.getX() + roundToInt (lfoBounds.getWidth() * proportion);
+	};
+	const int lfoLabelY = lfoBounds.getY() + 31;
+	const int lfoControlY = lfoBounds.getY() + 63;
+	const int lfoColumnWidth = jmax (48, roundToInt (lfoBounds.getWidth() * 0.105f));
+	const int lfoKnobHeight = jmax (42, lfoBounds.getBottom() - lfoControlY - 8);
+	lfoPhaseLabel->setBounds(lfoColumnX (0.82f), lfoLabelY, lfoColumnWidth, 20);
+	lfoFrequencyLabel->setBounds(lfoColumnX (0.34f), lfoLabelY, lfoColumnWidth, 20);
+	lfoBiasLabel->setBounds(lfoColumnX (0.50f), lfoLabelY, lfoColumnWidth, 20);
+	lfoKSynLabel->setBounds(lfoColumnX (0.66f), lfoLabelY, lfoColumnWidth, 20);
 	for (int k = 0; k < NUMBER_OF_LFO; k++) {
-		lfoButton[k]->setBounds(2 + 60 * k, proportionOfHeight(0.01f) + 9, 60, 26);
-		lfoShape[k]->setBounds(proportionOfWidth(0.07f), proportionOfHeight(0.12f), proportionOfWidth(0.08f), 20);
-		lfoPhase[k]->setBounds(proportionOfWidth(0.48f), proportionOfHeight(0.10f), proportionOfWidth(0.08f), proportionOfHeight(0.1f));
-		lfoExtMidiSync[k]->setBounds(proportionOfWidth(0.21f), proportionOfHeight(0.08f), proportionOfWidth(0.08f), 20);
-		lfoFrequency[k]->setBounds(proportionOfWidth(0.21f), proportionOfHeight(0.12f), proportionOfWidth(0.08f), proportionOfHeight(0.1f));
-		lfoBias[k]->setBounds(proportionOfWidth(0.30f), proportionOfHeight(0.06f), proportionOfWidth(0.08f), proportionOfHeight(0.16f));
-		lfoKsynOnOff[k]->setBounds(proportionOfWidth(0.39f), proportionOfHeight(0.08f), proportionOfWidth(0.08f), 20);
-		lfoKSync[k]->setBounds(proportionOfWidth(0.39f), proportionOfHeight(0.12f), proportionOfWidth(0.08f), proportionOfHeight(0.1f));
+		lfoButton[k]->setBounds(lfoBounds.getX() + 2 + 60 * k, lfoBounds.getY() + 9, 60, 26);
+		lfoShape[k]->setBounds(lfoColumnX (0.11f), lfoControlY + 8, lfoColumnWidth + 10, 20);
+		lfoPhase[k]->setBounds(lfoColumnX (0.82f), lfoControlY, lfoColumnWidth, lfoKnobHeight);
+		lfoExtMidiSync[k]->setBounds(lfoColumnX (0.34f), lfoLabelY + 20, lfoColumnWidth, 18);
+		lfoFrequency[k]->setBounds(lfoColumnX (0.34f), lfoControlY, lfoColumnWidth, lfoKnobHeight);
+		lfoBias[k]->setBounds(lfoColumnX (0.50f), lfoLabelY + 20, lfoColumnWidth, lfoBounds.getBottom() - lfoLabelY - 28);
+		lfoKsynOnOff[k]->setBounds(lfoColumnX (0.66f), lfoLabelY + 20, lfoColumnWidth, 18);
+		lfoKSync[k]->setBounds(lfoColumnX (0.66f), lfoControlY, lfoColumnWidth, lfoKnobHeight);
 	}
 
-	stepSeqBPMLabel->setBounds(proportionOfWidth(0.25f), proportionOfHeight(0.66f), 40, 20);
-	stepSeqGateLabel->setBounds(proportionOfWidth(0.46f), proportionOfHeight(0.66f), 60, 20);
+	stepSeqBPMLabel->setBounds(stepBounds.getX() + roundToInt (stepBounds.getWidth() * 0.43f), stepBounds.getY() + 42, 40, 20);
+	stepSeqGateLabel->setBounds(stepBounds.getX() + roundToInt (stepBounds.getWidth() * 0.76f), stepBounds.getY() + 42, 60, 20);
 	for (int k = 0; k < NUMBER_OF_STEP_SEQ; k++) {
-		stepSeqButton[k]->setBounds(2 + 100 * k, proportionOfHeight(0.61f) + 9, 100, 26);
-		stepSequencer[k]->setBounds(proportionOfWidth(0.02f), proportionOfHeight(0.78f), proportionOfWidth(0.55f), proportionOfHeight(0.20f));
-		stepSeqExtMidiSync[k]->setBounds(proportionOfWidth(0.29f) + 10, proportionOfHeight(0.66f), 80, 20);
-		stepSeqBPM[k]->setBounds(proportionOfWidth(0.27f), proportionOfHeight(0.69f), 80, 60);
-		stepSeqGate[k]->setBounds(proportionOfWidth(0.46f) + 20 - proportionOfWidth(0.08f), proportionOfHeight(0.70f), proportionOfWidth(0.16f), 40);
+		stepSeqButton[k]->setBounds(stepBounds.getX() + 2 + 100 * k, stepBounds.getY() + 9, 100, 26);
+		stepSequencer[k]->setBounds(stepBounds.getX() + 14, stepBounds.getY() + 108,
+			stepBounds.getWidth() - 28, jmax (40, stepBounds.getHeight() - 118));
+		stepSeqExtMidiSync[k]->setBounds(stepBounds.getX() + roundToInt (stepBounds.getWidth() * 0.25f), stepBounds.getY() + 43, 80, 20);
+		stepSeqBPM[k]->setBounds(stepBounds.getX() + roundToInt (stepBounds.getWidth() * 0.40f), stepBounds.getY() + 62, 80, 43);
+		stepSeqGate[k]->setBounds(stepBounds.getX() + roundToInt (stepBounds.getWidth() * 0.72f), stepBounds.getY() + 66, 90, 36);
 	}
 
+	const int matrixTop = matrixBounds.getY() + 25;
+	const int matrixBottom = matrixBounds.getBottom() - 13;
+	const float matrixRowHeight = static_cast<float> (matrixBottom - matrixTop) / NUMBER_OF_MATRIX_ROW;
+	const int sourceX = matrixBounds.getX() + 34;
+	const int sourceWidth = roundToInt (matrixBounds.getWidth() * 0.33f);
+	const int multiplierX = sourceX + sourceWidth + 5;
+	const int multiplierWidth = roundToInt (matrixBounds.getWidth() * 0.25f);
+	const int destinationX = multiplierX + multiplierWidth + 5;
+	const int destinationWidth = jmax (70, matrixBounds.getRight() - 10 - destinationX);
 	for (int r = 0; r < NUMBER_OF_MATRIX_ROW; r++) {
-		matrixRowLabel[r]->setBounds(proportionOfWidth(0.60f), proportionOfHeight(.06f + .08f * r), proportionOfWidth(0.03f), 20);
-		matrixSource[r]->setBounds(proportionOfWidth(0.63f), proportionOfHeight(.06f + .08f * r), proportionOfWidth(0.10f), 20);
-		matrixMultipler[r]->setBounds(proportionOfWidth(0.74f), proportionOfHeight(.034f + .08f * r), proportionOfWidth(0.12f), proportionOfHeight(0.088f));
-		matrixDestination1[r]->setBounds(proportionOfWidth(0.86f), proportionOfHeight(.042f + .08f * r), proportionOfWidth(0.12f), 18);
-        matrixDestination2[r]->setBounds(proportionOfWidth(0.86f), proportionOfHeight(.074f + .08f * r), proportionOfWidth(0.12f), 18);
+		const int rowCentre = roundToInt (matrixTop + matrixRowHeight * (r + 0.5f));
+		const int knobHeight = jmin (46, jmax (36, roundToInt (matrixRowHeight - 3.0f)));
+		matrixRowLabel[r]->setBounds(matrixBounds.getX() + 6, rowCentre - 10, 25, 20);
+		matrixSource[r]->setBounds(sourceX, rowCentre - 10, sourceWidth, 20);
+		matrixMultipler[r]->setBounds(multiplierX, rowCentre - knobHeight / 2, multiplierWidth, knobHeight);
+		matrixDestination1[r]->setBounds(destinationX, rowCentre - 20, destinationWidth, 18);
+        matrixDestination2[r]->setBounds(destinationX, rowCentre + 2, destinationWidth, 18);
 	}
-	enveloppeFree1->setBounds(proportionOfWidth(0.02f), proportionOfHeight(0.27f), proportionOfWidth(0.55f), proportionOfHeight(0.14f));
-	enveloppeFree2->setBounds(proportionOfWidth(0.02f), proportionOfHeight(0.46f), proportionOfWidth(0.55f), proportionOfHeight(0.14f));
+	enveloppeFree1->setBounds(env1Bounds.reduced (14, 20));
+	enveloppeFree2->setBounds(env2Bounds.reduced (14, 20));
 
-	enveloppeFree2LoopLabel->setBounds(proportionOfWidth(0.42f), proportionOfHeight(.55f), 60, 20);
-	enveloppeFree2Loop->setBounds(proportionOfWidth(0.47f), proportionOfHeight(.55f), 80, 20);
+	enveloppeFree2LoopLabel->setBounds(env2Bounds.getRight() - 150, env2Bounds.getY() + 4, 55, 20);
+	enveloppeFree2Loop->setBounds(env2Bounds.getRight() - 92, env2Bounds.getY() + 4, 80, 20);
 
     //[/UserResized]
 }
@@ -529,13 +552,13 @@ void PanelModulation::resized()
 void PanelModulation::buttonClicked(Button* buttonThatWasClicked) {
 	bool lfoButtonClicked = false;
 	for (int k = 0; k < NUMBER_OF_LFO; k++) {
-		if (buttonThatWasClicked == lfoButton[k]) {
+		if (buttonThatWasClicked == lfoButton[k].get()) {
 			lfoButtonClicked = true;
 		}
 	}
 	if (lfoButtonClicked) {
 		for (int k = 0; k < NUMBER_OF_LFO; k++) {
-			if (buttonThatWasClicked == lfoButton[k]) {
+			if (buttonThatWasClicked == lfoButton[k].get()) {
 				lfoShape[k]->setVisible(true);
 				lfoPhase[k]->setVisible(true);
 				lfoExtMidiSync[k]->setVisible(true);
@@ -559,13 +582,13 @@ void PanelModulation::buttonClicked(Button* buttonThatWasClicked) {
 	}
 	bool stepButtonClicked = false;
 	for (int k = 0; k < NUMBER_OF_STEP_SEQ; k++) {
-		if (buttonThatWasClicked == stepSeqButton[k]) {
+		if (buttonThatWasClicked == stepSeqButton[k].get()) {
 			stepButtonClicked = true;
 		}
 	}
 	if (stepButtonClicked) {
 		for (int k = 0; k < NUMBER_OF_STEP_SEQ; k++) {
-			if (buttonThatWasClicked == stepSeqButton[k]) {
+			if (buttonThatWasClicked == stepSeqButton[k].get()) {
 				stepSequencer[k]->setVisible(true);
 				stepSeqBPM[k]->setVisible(true);
 				stepSeqExtMidiSync[k]->setVisible(true);
@@ -594,23 +617,23 @@ void PanelModulation::sliderValueChanged(Slider* sliderThatWasMoved, bool fromPl
 		AudioProcessorParameter * parameterReady = parameterMap[sliderThatWasMoved->getName()];
 		if (parameterReady != nullptr) {
 			float value = (float)sliderThatWasMoved->getValue();
-			((MidifiedFloatParameter*)parameterReady)->setRealValue(value);
+			static_cast<MidifiedFloatParameter*>(parameterReady)->setRealValue(value);
 		}
 	}
 	for (int k = 0; k < NUMBER_OF_LFO; k++) {
-		if (sliderThatWasMoved == lfoFrequency[k] && lfoExtMidiSync[k]->getSelectedId() != 9990) {
+		if (sliderThatWasMoved == lfoFrequency[k].get() && lfoExtMidiSync[k]->getSelectedId() != 9990) {
 			lfoFrequency[k]->setEnabled(true);
 			lfoExtMidiSync[k]->setSelectedId(9990, dontSendNotification);
 		}
 
-		if (sliderThatWasMoved == lfoKSync[k] && lfoKsynOnOff[k]->getSelectedId() != 2) {
+		if (sliderThatWasMoved == lfoKSync[k].get() && lfoKsynOnOff[k]->getSelectedId() != 2) {
 			lfoKSync[k]->setEnabled(true);
 			lfoKsynOnOff[k]->setSelectedId(2, dontSendNotification);
 		}
 	}
 
 	for (int k = 0; k < NUMBER_OF_STEP_SEQ; k++) {
-		if (sliderThatWasMoved == stepSeqBPM[k] && stepSeqExtMidiSync[k]->getSelectedId() != 240) {
+		if (sliderThatWasMoved == stepSeqBPM[k].get() && stepSeqExtMidiSync[k]->getSelectedId() != 240) {
 			stepSeqBPM[k]->setEnabled(true);
 			stepSeqExtMidiSync[k]->setSelectedId(240, dontSendNotification);
 		}
@@ -627,12 +650,12 @@ void PanelModulation::comboBoxChanged(ComboBox* comboBoxThatHasChanged, bool fro
 		AudioProcessorParameter * parameterReady = parameterMap[comboBoxThatHasChanged->getName()];
 		if (parameterReady != nullptr) {
 			float value = (float)comboBoxThatHasChanged->getSelectedId();
-			((MidifiedFloatParameter*)parameterReady)->setRealValue(value);
+			static_cast<MidifiedFloatParameter*>(parameterReady)->setRealValue(value);
 		}
 	}
 
 	for (int k = 0; k < NUMBER_OF_LFO; k++) {
-		if (comboBoxThatHasChanged == lfoExtMidiSync[k]) {
+		if (comboBoxThatHasChanged == lfoExtMidiSync[k].get()) {
 			// Refresh Ksyn frequency on pfm2
 			if (comboBoxThatHasChanged->getSelectedId() == 9990) {
 				lfoFrequency[k]->setEnabled(true);
@@ -645,7 +668,7 @@ void PanelModulation::comboBoxChanged(ComboBox* comboBoxThatHasChanged, bool fro
 				lfoFrequency[k]->setEnabled(false);
 			}
 		}
-		if (comboBoxThatHasChanged == lfoKsynOnOff[k]) {
+		if (comboBoxThatHasChanged == lfoKsynOnOff[k].get()) {
 			if (lfoKsynOnOff[k]->getSelectedId() == 2) {
 				lfoKSync[k]->setEnabled(true);
 				// Refresh Ksyn frequency on pfm2
@@ -659,7 +682,7 @@ void PanelModulation::comboBoxChanged(ComboBox* comboBoxThatHasChanged, bool fro
 		}
 	}
 	for (int k = 0; k < NUMBER_OF_STEP_SEQ; k++) {
-		if (comboBoxThatHasChanged == stepSeqExtMidiSync[k]) {
+		if (comboBoxThatHasChanged == stepSeqExtMidiSync[k].get()) {
 			if (comboBoxThatHasChanged->getSelectedId() == 240) {
 				stepSeqBPM[k]->setEnabled(true);
 				float value = (float)stepSeqBPM[k]->getValue();
@@ -678,28 +701,28 @@ void PanelModulation::comboBoxChanged(ComboBox* comboBoxThatHasChanged, bool fro
 
 void PanelModulation::buildParameters() {
 	for (int k = 0; k < NUMBER_OF_MATRIX_ROW; k++) {
-		updateComboFromParameter(matrixSource[k]);
-		updateSliderFromParameter(matrixMultipler[k]);
-        updateComboFromParameter(matrixDestination1[k]);
-		updateComboFromParameter(matrixDestination2[k]);
+		updateComboFromParameter(matrixSource[k].get());
+		updateSliderFromParameter(matrixMultipler[k].get());
+        updateComboFromParameter(matrixDestination1[k].get());
+		updateComboFromParameter(matrixDestination2[k].get());
 	}
 	for (int k = 0; k < NUMBER_OF_LFO; k++) {
-		updateComboFromParameter(lfoShape[k]);
-		updateComboFromParameter(lfoExtMidiSync[k]);
-		updateSliderFromParameter(lfoPhase[k]);
-		updateSliderFromParameter(lfoFrequency[k]);
-		updateSliderFromParameter(lfoBias[k]);
-		updateComboFromParameter(lfoKsynOnOff[k]);
-		updateSliderFromParameter(lfoKSync[k]);
+		updateComboFromParameter(lfoShape[k].get());
+		updateComboFromParameter(lfoExtMidiSync[k].get());
+		updateSliderFromParameter(lfoPhase[k].get());
+		updateSliderFromParameter(lfoFrequency[k].get());
+		updateSliderFromParameter(lfoBias[k].get());
+		updateComboFromParameter(lfoKsynOnOff[k].get());
+		updateSliderFromParameter(lfoKSync[k].get());
 	}
 
-	updateComboFromParameter(enveloppeFree2Loop);
+	updateComboFromParameter(enveloppeFree2Loop.get());
 
 	for (int k = 0; k < NUMBER_OF_STEP_SEQ; k++) {
-		updateStepSeqParameter(stepSequencer[k]);
-		updateComboFromParameter(stepSeqExtMidiSync[k]);
-		updateSliderFromParameter(stepSeqBPM[k]);
-		updateSliderFromParameter(stepSeqGate[k]);
+		updateStepSeqParameter(stepSequencer[k].get());
+		updateComboFromParameter(stepSeqExtMidiSync[k].get());
+		updateSliderFromParameter(stepSeqBPM[k].get());
+		updateSliderFromParameter(stepSeqGate[k].get());
 	}
 	updateUIEnveloppe("");
 
@@ -722,7 +745,7 @@ void PanelModulation::updateUIEnveloppe(String paramName) {
 
 		MidifiedFloatParameter* param = checkParamExistence(name);
 
-		if (paramName.length() > 0 && (param == nullptr || name != String(paramName))) {
+		if (param == nullptr || (paramName.length() > 0 && name != String(paramName))) {
 			continue;
 		}
 
@@ -730,13 +753,13 @@ void PanelModulation::updateUIEnveloppe(String paramName) {
 		// No modification : we dont want sliderValueChanged to be called in the different panels
 
 		if (p == 3) {
-			if (param->getValue() != enveloppeFree1->getY(p)) {
+			if (param->getRealValue() != enveloppeFree1->getY(p)) {
 				enveloppeFree1->setY(p, param->getRealValue());
 				enveloppeFree1->repaint();
 			}
 		}
 		else {
-			if (param->getValue() != enveloppeFree1->getX(p)) {
+			if (param->getRealValue() != enveloppeFree1->getX(p)) {
 				enveloppeFree1->setX(p, param->getRealValue());
 				enveloppeFree1->repaint();
 			}
@@ -751,13 +774,13 @@ void PanelModulation::updateUIEnveloppe(String paramName) {
 
 		MidifiedFloatParameter* param = checkParamExistence(name);
 
-		if (paramName.length() > 0 && (param == nullptr || name != String(paramName))) {
+		if (param == nullptr || (paramName.length() > 0 && name != String(paramName))) {
 			continue;
 		}
 
 		// And let's update the value and update the UI Without sending modification !!!
 		// No modification : we dont want sliderValueChanged to be called in the different panels
-		if (param->getValue() != enveloppeFree2->getX(p)) {
+		if (param->getRealValue() != enveloppeFree2->getX(p)) {
 			enveloppeFree2->setX(p, param->getRealValue());
 			enveloppeFree2->repaint();
 		}
@@ -766,10 +789,10 @@ void PanelModulation::updateUIEnveloppe(String paramName) {
 
 void PanelModulation::updateUIStepSequencer(String paramName) {
 	if (paramName.startsWith("Step Seq 1")) {
-		updateStepSeqParameter(stepSequencer[0]);
+		updateStepSeqParameter(stepSequencer[0].get());
 	}
 	else {
-		updateStepSeqParameter(stepSequencer[1]);
+		updateStepSeqParameter(stepSequencer[1].get());
 	}
 }
 
@@ -817,6 +840,9 @@ void PanelModulation::setPfmType(int typeComboId) {
 
 	for (int r = 0; r < NUMBER_OF_MATRIX_ROW; r++) {
 		int selectedSource = matrixSource[r]->getSelectedId();
+		int selectedDest1 = matrixDestination1[r]->getSelectedId();
+		int selectedDest2 = matrixDestination2[r]->getSelectedId();
+
 		matrixSource[r]->clear(NotificationType::dontSendNotification);
 		for (int i = 0; sourcesNameAndId[i].name != ""; i++) {
 			if (sourcesNameAndId[i].preenfmTarget == 0 || sourcesNameAndId[i].preenfmTarget == preenfmPropertyVersion) {
@@ -825,27 +851,24 @@ void PanelModulation::setPfmType(int typeComboId) {
 			if (sourcesNameAndId[i].preenfmTarget == preenfmPropertyVersion && sourcesNameAndId[i].name.startsWith("--")) {
 				matrixSource[r]->setItemEnabled((sourcesNameAndId[i].id + 1), false);
 			}
-			matrixSource[r]->setSelectedId(selectedSource, NotificationType::dontSendNotification);
-
-			int selectedDest1 = matrixDestination1[r]->getSelectedId();
-			int selectedDest2 = matrixDestination2[r]->getSelectedId();
-
-			matrixDestination1[r]->clear(NotificationType::dontSendNotification);
-			matrixDestination2[r]->clear(NotificationType::dontSendNotification);
-
-			for (int i = 0; destNameAndId[i].name != ""; i++) {
-				if (destNameAndId[i].preenfmTarget == 0 || destNameAndId[i].preenfmTarget == preenfmPropertyVersion) {
-					matrixDestination1[r]->addItem(destNameAndId[i].name, (destNameAndId[i].id + 1));
-					matrixDestination2[r]->addItem(destNameAndId[i].name, (destNameAndId[i].id + 1));
-				}
-				if (destNameAndId[i].preenfmTarget == preenfmPropertyVersion && destNameAndId[i].name.startsWith("--")) {
-					matrixDestination1[r]->setItemEnabled((destNameAndId[i].id + 1), false);
-					matrixDestination2[r]->setItemEnabled((destNameAndId[i].id + 1), false);
-				}
-			}
-			matrixDestination1[r]->setSelectedId(selectedDest1, NotificationType::dontSendNotification);
-			matrixDestination2[r]->setSelectedId(selectedDest2, NotificationType::dontSendNotification);
 		}
+		matrixSource[r]->setSelectedId(selectedSource, NotificationType::dontSendNotification);
+
+		matrixDestination1[r]->clear(NotificationType::dontSendNotification);
+		matrixDestination2[r]->clear(NotificationType::dontSendNotification);
+
+		for (int i = 0; destNameAndId[i].name != ""; i++) {
+			if (destNameAndId[i].preenfmTarget == 0 || destNameAndId[i].preenfmTarget == preenfmPropertyVersion) {
+				matrixDestination1[r]->addItem(destNameAndId[i].name, (destNameAndId[i].id + 1));
+				matrixDestination2[r]->addItem(destNameAndId[i].name, (destNameAndId[i].id + 1));
+			}
+			if (destNameAndId[i].preenfmTarget == preenfmPropertyVersion && destNameAndId[i].name.startsWith("--")) {
+				matrixDestination1[r]->setItemEnabled((destNameAndId[i].id + 1), false);
+				matrixDestination2[r]->setItemEnabled((destNameAndId[i].id + 1), false);
+			}
+		}
+		matrixDestination1[r]->setSelectedId(selectedDest1, NotificationType::dontSendNotification);
+		matrixDestination2[r]->setSelectedId(selectedDest2, NotificationType::dontSendNotification);
 	}
 }
 

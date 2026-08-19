@@ -46,14 +46,17 @@ public:
 	}
 
 
-	void setParameterSet(AudioProcessor* audioProcessor) {
-		this->audioProcessor = audioProcessor;
+	void setParameterSet(AudioProcessor* processor) {
+		audioProcessor = processor;
 		parameterMap.clear();
 	}
 
 	virtual void buildParameters() = 0;
 
 	void updateSliderFromParameter(Slider* slider) {
+		if (slider == nullptr) {
+			return;
+		}
 
 		String componentName = slider->getName();
 		if (componentMap[componentName] == nullptr) {
@@ -62,38 +65,43 @@ public:
 
 		MidifiedFloatParameter * parameter = checkParamExistence(componentName);
 
-		// And let's update the value and update the UI Without sending modification !!!
-		// No modification : we dont want sliderValueChanged to be called in the different panels
-		slider->setValue(parameter->getRealValue(), dontSendNotification);
-
-		// Will remove that later but dont' BUG for the moment if that doesn't fit
 		if (parameter == nullptr) {
 			return;
 		}
 
+		// And let's update the value and update the UI Without sending modification !!!
+		// No modification : we dont want sliderValueChanged to be called in the different panels
+		slider->setValue(parameter->getRealValue(), dontSendNotification);
+
 		updateSliderFromParameter_hook(slider);
 	}
 
-	MidifiedFloatParameter* checkParamExistence(String componentName) {
+	MidifiedFloatParameter* checkParamExistence(const String& componentName) {
 
 		MidifiedFloatParameter* parameter = parameterMap[componentName];
-		if (parameter == nullptr) {
-			Array<AudioProcessorParameter*> parameters = audioProcessor->getParameters();
-			for (int p = 0; p < parameters.size(); p++) {
-				parameter = (MidifiedFloatParameter*)parameters[p];
-				if (parameter->getName() == componentName) {
-					parameterMap.set(componentName, parameter);
-					break;
-				}
+		if (parameter != nullptr || audioProcessor == nullptr) {
+			return parameter;
+		}
+
+		const auto& parameters = audioProcessor->getParameters();
+		for (int p = 0; p < parameters.size(); p++) {
+			MidifiedFloatParameter* candidate = dynamic_cast<MidifiedFloatParameter*>(parameters[p]);
+			if (candidate != nullptr && candidate->getName() == componentName) {
+				parameterMap.set(componentName, candidate);
+				return candidate;
 			}
 		}
-		return parameter;
+
+		return nullptr;
 	}
 
 	// Can be overriden by sub classes
-	virtual void updateSliderFromParameter_hook(Slider* slider) { }
+	virtual void updateSliderFromParameter_hook(Slider*) {}
 
 	void updateComboFromParameter(ComboBox* combo) {
+		if (combo == nullptr) {
+			return;
+		}
 
 		String componentName = combo->getName();
 		if (componentMap[componentName] == nullptr) {
@@ -118,6 +126,9 @@ public:
 	}
 
 	void updateStepSeqParameter(StepSequencer* stepSeq) {
+		if (stepSeq == nullptr) {
+			return;
+		}
 
 		for (int k = 0; k < 16; k++) {
 
@@ -139,7 +150,7 @@ public:
 	}
 
 	// Can be overriden by sub classes
-	virtual void updateComboFromParameter_hook(ComboBox* combo) { }
+	virtual void updateComboFromParameter_hook(ComboBox*) {}
 
 
 	// Enveloppe Listener
@@ -240,11 +251,11 @@ public:
 
 		}
 	}
-	virtual bool containsThisParameterAsEnveloppe(String paramName) { return false; }
-	virtual bool containsThisParameterAsStepSequencer(String paramName) { return false; }
-	virtual void updateUIEnveloppe(String paramName) {
+	virtual bool containsThisParameterAsEnveloppe(String) { return false; }
+	virtual bool containsThisParameterAsStepSequencer(String) { return false; }
+	virtual void updateUIEnveloppe(String) {
 	}
-	virtual void updateUIStepSequencer(String paramName) {
+	virtual void updateUIStepSequencer(String) {
 	}
 
 	virtual void setPfmType(int type) {
@@ -255,8 +266,8 @@ protected:
 	HashMap<const String, MidifiedFloatParameter *> parameterMap;
 	HashMap<const String, Component*> componentMap;
 	HashMap<const String, int> componentType;
-	AudioProcessor* audioProcessor;
-	int pfmType;
+	AudioProcessor* audioProcessor = nullptr;
+	int pfmType = TYPE_PREENFM2;
 };
 
 

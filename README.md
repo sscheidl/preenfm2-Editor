@@ -5,9 +5,12 @@ It uses the [JUCE framework](https://juce.com/).
 
 ## Modern CMake build
 
-PreenFM+ 4.0.0 targets JUCE 9.0.0, C++17, VST3 and a standalone plugin host.
+PreenFM+ 4.0.1 targets JUCE 9.0.0, C++17, VST3 and a standalone plugin host.
 JUCE is fetched automatically and pinned to a release tag, so no sibling `JUCE_6.0`
 directory or generated Projucer project is required.
+
+Version 4.x assumes PreenFM firmware with the VOSIM extension (algorithms 29-32
+and LFO shapes 6-8). Use a 3.x editor with older firmware.
 
 Requirements on Windows:
 
@@ -25,8 +28,14 @@ The release artefacts are written below
 
 The `windows-vs2022-x64` presets remain available as a fallback.
 
+Only the CMake-based Windows x64 build is maintained and tested for 4.0.1. The
+checked-in Projucer, Visual Studio 2019, Linux and macOS projects are legacy
+references and are not release build paths.
+
 See [docs/MODERNIZATION.md](docs/MODERNIZATION.md) for migration details,
-validation status and remaining technical debt.
+validation status, corrected legacy bugs and remaining technical debt. Version
+4.x includes substantial correctness work inherited from the original editor in
+addition to its new firmware and GUI support.
 
 There are compiled versions for macOS and Windows [here](https://github.com/Ixox/preenfm2Controller/releases).  
 

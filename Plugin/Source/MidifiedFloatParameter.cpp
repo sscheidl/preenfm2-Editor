@@ -20,15 +20,15 @@
 #include "PluginProcessor.h"
 #include "MidifiedFloatParameter.h"
 
-int MidifiedFloatParameter::paramIndexCounter = 0;
-
-
-
 void MidifiedFloatParameter::setValue(float newValue) {
 	float tmpValue = range.convertFrom0to1(newValue);
 	if (value != tmpValue) {
 		value = tmpValue;
-		audioProcessor->setParameter(getParameterIndex(), newValue);
+		jassert(audioProcessor != nullptr);
+		if (audioProcessor == nullptr) {
+			return;
+		}
+		audioProcessor->hostParameterChanged(getParameterIndex());
 	}
 }
 
@@ -40,6 +40,10 @@ void MidifiedFloatParameter::setValueFromNrpn(int nrpnValue) {
 void MidifiedFloatParameter::setRealValue(float newValue) {
 	if (value != newValue) {
 		value = newValue;
+		jassert(audioProcessor != nullptr);
+		if (audioProcessor == nullptr) {
+			return;
+		}
 		audioProcessor->onParameterUpdated(this);
 	}
 }
@@ -67,24 +71,5 @@ float MidifiedFloatParameter::getPfmBankValue() {
 	else {
 		return value;
 	}
-}
-
-void MidifiedFloatParameter::addNrpn(MidiBuffer& midiBuffer, const int midiChannel) {
-	double time = Time::getMillisecondCounterHiRes() * .001;
-	MidiMessage byte1 = MidiMessage::controllerEvent(midiChannel, 99, getNrpnParamMSB());
-	byte1.setTimeStamp(time);
-	midiBuffer.addEvent(byte1, 512);
-
-	MidiMessage byte2 = MidiMessage::controllerEvent(midiChannel, 98, getNrpnParamLSB());
-	byte2.setTimeStamp(time);
-	midiBuffer.addEvent(byte2, 512);
-
-	MidiMessage byte3 = MidiMessage::controllerEvent(midiChannel, 6, getNrpnValueMSB());
-	byte3.setTimeStamp(time);
-	midiBuffer.addEvent(byte3, 512);
-
-	MidiMessage byte4 = MidiMessage::controllerEvent(midiChannel, 38, getNrpnValueLSB());
-	byte4.setTimeStamp(time);
-	midiBuffer.addEvent(byte4, 512);
 }
 
