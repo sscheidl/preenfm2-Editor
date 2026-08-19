@@ -35,9 +35,9 @@ class Pfm2AudioProcessorEditor : public AudioProcessorEditor, public Timer
 	friend class Pfm2AudioProcessor;
 public:
 	static constexpr int minimumWidth = 900;
-	static constexpr int minimumHeight = 710;
+	static constexpr int minimumHeight = 778;
 	static constexpr int defaultWidth = 1000;
-	static constexpr int defaultHeight = 750;
+	static constexpr int defaultHeight = 818;
 
 	Pfm2AudioProcessorEditor(Pfm2AudioProcessor* ownerFilter);
 	~Pfm2AudioProcessorEditor();

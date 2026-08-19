@@ -110,6 +110,7 @@ private:
     std::unique_ptr<TextButton> deviceButton;
     std::unique_ptr<HyperlinkButton> versionButton;
     std::unique_ptr<ComboBox> pfmTypeCombo;
+    std::unique_ptr<Component> hardwarePresetBrowser;
 
 
     //==============================================================================

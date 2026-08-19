@@ -97,6 +97,10 @@ Pfm2MidiDevice::~Pfm2MidiDevice() {
 }
 
 void Pfm2MidiDevice::resetDevices() {
+	// Anything still queued belongs to the device we are closing. Bumping the
+	// generation makes the worker discard those events instead of replaying
+	// them into whatever is opened next.
+	deviceGeneration.fetch_add(1, std::memory_order_acq_rel);
 
 	if (pfm2MidiInput) {
 		pfm2MidiInput->stop();
@@ -170,6 +174,7 @@ bool Pfm2MidiDevice::queueMidiMessage(const uint8_t* messageData,
 			(statusByte & 0xf0) | (midiChannelOverride - 1));
 	}
 
+	cell->event.deviceGeneration = deviceGeneration.load(std::memory_order_acquire);
 	finishEnqueue(position, *cell);
 	return true;
 }
@@ -193,6 +198,7 @@ bool Pfm2MidiDevice::queueNrpn(int midiChannel, int parameter, int value) noexce
 	cell->event.midiChannel = static_cast<uint8_t>(midiChannel);
 	cell->event.nrpnParameter = static_cast<uint16_t>(parameter);
 	cell->event.nrpnValue = static_cast<uint16_t>(value);
+	cell->event.deviceGeneration = deviceGeneration.load(std::memory_order_acquire);
 	finishEnqueue(position, *cell);
 	return true;
 }
@@ -222,6 +228,7 @@ bool Pfm2MidiDevice::dequeueOutputEvent(OutputEvent& event) noexcept {
 	}
 
 	event.type = cell->event.type;
+	event.deviceGeneration = cell->event.deviceGeneration;
 	if (event.type == OutputEventType::midiMessage) {
 		event.messageSize = cell->event.messageSize;
 		std::memcpy(event.messageData.data(), cell->event.messageData.data(),
@@ -239,7 +246,20 @@ bool Pfm2MidiDevice::dequeueOutputEvent(OutputEvent& event) noexcept {
 
 void Pfm2MidiDevice::sendOutputEvent(const OutputEvent& event) {
 	const ScopedLock lock(messageLock);
+
+	// A batch built for an earlier device must never be finished on a device
+	// the caller never addressed: after a reconnect the same store request
+	// would otherwise write the old patch into the new instrument.
+	if (event.deviceGeneration
+		!= deviceGeneration.load(std::memory_order_acquire)) {
+		++undeliveredOutputEvents;
+		return;
+	}
+
 	if (pfm2MidiOutput == nullptr || pfm2MidiInput == nullptr) {
+		// Queue success is not send success. Counting this makes an
+		// incomplete transfer visible instead of silently dropping it.
+		++undeliveredOutputEvents;
 		return;
 	}
 
@@ -342,6 +362,10 @@ void Pfm2MidiDevice::choseNewDevices() {
 			if (result == 1) {
 				const ScopedLock deviceLock(messageLock);
 
+				// Invalidate everything still queued for the old device before
+				// any handle is replaced.
+				deviceGeneration.fetch_add(1, std::memory_order_acq_rel);
+
 				if (pfm2MidiOutput.get() != nullptr) {
 					pfm2MidiOutput.reset();
 				}
@@ -381,6 +405,121 @@ void Pfm2MidiDevice::choseNewDevices() {
 			}
 		} while ((pfm2MidiInput.get() == nullptr || pfm2MidiOutput.get() == nullptr) && result == 1);
 	}
+}
+
+uint32_t Pfm2MidiDevice::tryBeginEditorTransaction() noexcept {
+	uint32_t expected = invalidTransactionToken;
+	uint32_t token = nextEditorTransactionToken.fetch_add(1,
+		std::memory_order_relaxed);
+	// Never hand out the reserved "free" value, even after a wrap.
+	if (token == invalidTransactionToken) {
+		token = nextEditorTransactionToken.fetch_add(1,
+			std::memory_order_relaxed);
+	}
+
+	if (editorTransactionToken.compare_exchange_strong(expected, token,
+		std::memory_order_acq_rel, std::memory_order_acquire)) {
+		return token;
+	}
+
+	// Deliberately not re-entrant: a second claim by the same caller would
+	// let a partial completion release the shared claim too early.
+	return invalidTransactionToken;
+}
+
+void Pfm2MidiDevice::endEditorTransaction(uint32_t token) noexcept {
+	if (token == invalidTransactionToken) {
+		return;
+	}
+
+	uint32_t expected = token;
+	// Succeeds only while this exact token is still the open one, so a late
+	// release from an already timed-out transaction cannot free a newer one.
+	editorTransactionToken.compare_exchange_strong(expected,
+		invalidTransactionToken,
+		std::memory_order_acq_rel, std::memory_order_acquire);
+}
+
+bool Pfm2MidiDevice::claimOutputQueueRun(size_t itemCount,
+	size_t& firstPosition) noexcept {
+	if (itemCount == 0 || itemCount > outputQueueCapacity) {
+		return false;
+	}
+
+	size_t position = outputEnqueuePosition.load(std::memory_order_relaxed);
+
+	for (;;) {
+		// Every cell of the run must be free before the range can be taken.
+		bool runIsFree = true;
+		for (size_t index = 0; index < itemCount; ++index) {
+			const size_t slot = position + index;
+			const auto& cell = outputQueue[slot % outputQueueCapacity];
+			const size_t sequence = cell.sequence.load(std::memory_order_acquire);
+			if (static_cast<std::intptr_t>(sequence)
+				- static_cast<std::intptr_t>(slot) != 0) {
+				runIsFree = false;
+				break;
+			}
+		}
+
+		if (!runIsFree) {
+			const size_t current =
+				outputEnqueuePosition.load(std::memory_order_relaxed);
+			if (current == position) {
+				// Not a lost race: the queue really cannot hold the run.
+				return false;
+			}
+			position = current;
+			continue;
+		}
+
+		// One CAS takes the whole range. A competing producer either wins and
+		// pushes us to a later position, or lands entirely after the run.
+		if (outputEnqueuePosition.compare_exchange_weak(position,
+			position + itemCount, std::memory_order_relaxed)) {
+			firstPosition = position;
+			return true;
+		}
+	}
+}
+
+bool Pfm2MidiDevice::queueNrpnBatch(int midiChannel, const NrpnItem* items,
+	size_t itemCount) noexcept {
+	if (items == nullptr || itemCount == 0
+		|| midiChannel < 1 || midiChannel > 16) {
+		++droppedOutputEvents;
+		return false;
+	}
+
+	for (size_t index = 0; index < itemCount; ++index) {
+		if (items[index].parameter > 0x3fff || items[index].value > 0x3fff) {
+			++droppedOutputEvents;
+			return false;
+		}
+	}
+
+	size_t firstPosition = 0;
+	if (!claimOutputQueueRun(itemCount, firstPosition)) {
+		// Nothing was enqueued, so the caller can abort cleanly instead of
+		// leaving a half transmitted patch on the wire.
+		++droppedOutputEvents;
+		return false;
+	}
+
+	const uint32_t generation = deviceGeneration.load(std::memory_order_acquire);
+
+	for (size_t index = 0; index < itemCount; ++index) {
+		const size_t slot = firstPosition + index;
+		auto& cell = outputQueue[slot % outputQueueCapacity];
+		cell.event.type = OutputEventType::nrpn;
+		cell.event.midiChannel = static_cast<uint8_t>(midiChannel);
+		cell.event.nrpnParameter = items[index].parameter;
+		cell.event.nrpnValue = items[index].value;
+		cell.event.deviceGeneration = generation;
+		cell.sequence.store(slot + 1, std::memory_order_release);
+	}
+
+	return true;
 }
 
 void Pfm2MidiDevice::addListener(MidiInputCallback *listener) {

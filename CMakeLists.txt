@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(PreenfmEditor
-    VERSION 4.0.1
+    VERSION 4.0.3
     DESCRIPTION "MIDI editor for the preenfm2 and preenfm3 synthesizers"
     LANGUAGES C CXX)
 
@@ -106,3 +106,13 @@ target_link_libraries(PreenfmEditor PRIVATE
     juce::juce_recommended_config_flags
     juce::juce_recommended_lto_flags
     juce::juce_recommended_warning_flags)
+
+# Deterministic tests for the editor remote protocol wire format. Standalone by
+# design: no JUCE, no plugin instance, no hardware, so it stays fast and can be
+# run from a plain command line. Not part of the release build presets.
+add_executable(EditorProtocolTests EXCLUDE_FROM_ALL
+    Plugin/Tests/EditorProtocolTests.cpp)
+target_compile_features(EditorProtocolTests PRIVATE cxx_std_17)
+
+enable_testing()
+add_test(NAME EditorProtocolTests COMMAND EditorProtocolTests)

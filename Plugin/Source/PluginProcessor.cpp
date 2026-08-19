@@ -525,8 +525,13 @@ Pfm2AudioProcessor::Pfm2AudioProcessor()
 
 Pfm2AudioProcessor::~Pfm2AudioProcessor()
 {
+    stopTimer();
     pfm2MidiDevice->removeListener(this);
     cancelPendingUpdate();
+    // Releasing here is mandatory: the transaction claim lives in the shared
+    // device, so an instance dying with an open claim would block the protocol
+    // for every other instance for the rest of the session.
+    finishEditorTransaction();
 
     delete myLookAndFeel;
 
@@ -674,6 +679,661 @@ void Pfm2AudioProcessor::setPfmType(int pt) {
 }
 
 
+void Pfm2AudioProcessor::setHardwarePresetTarget(
+    int bankNumber, int presetNumber) noexcept {
+    // Only 64 regular PreenFM patch banks are addressable
+    // (NUMBEROFPREENFMBANKS), regardless of the theoretical width of CC32.
+    // Clamping rather than wrapping keeps an old saved state that stored bank
+    // 65..128 on bank 64 instead of silently folding it back onto bank 1.
+    hardwarePresetBank.store(jlimit(1, PREENFM_EDITOR_BANK_COUNT, bankNumber),
+        std::memory_order_relaxed);
+    hardwarePresetNumber.store(
+        jlimit(1, PREENFM_EDITOR_PRESET_COUNT, presetNumber),
+        std::memory_order_relaxed);
+}
+
+
+void Pfm2AudioProcessor::queueHardwarePresetSelection(
+    int bankNumber, int presetNumber) {
+    const int channel = jlimit(1, 16,
+        currentMidiChannel.load(std::memory_order_relaxed));
+    const int zeroBasedBank =
+        jlimit(1, PREENFM_EDITOR_BANK_COUNT, bankNumber) - 1;
+    const int zeroBasedPreset =
+        jlimit(1, PREENFM_EDITOR_PRESET_COUNT, presetNumber) - 1;
+
+    // CC#0 selects a native PreenFM patch bank. CC#32 and Program Change
+    // select the zero-based bank and patch positions documented by the
+    // firmware MIDI protocol.
+    pfm2MidiDevice->queueMidiMessage(
+        MidiMessage::controllerEvent(channel, 0, 0));
+    pfm2MidiDevice->queueMidiMessage(
+        MidiMessage::controllerEvent(channel, 32, zeroBasedBank));
+    pfm2MidiDevice->queueMidiMessage(
+        MidiMessage::programChange(channel, zeroBasedPreset));
+}
+
+
+void Pfm2AudioProcessor::requestCurrentHardwarePreset() {
+    pfm2MidiDevice->queueNrpn(jlimit(1, 16,
+        currentMidiChannel.load(std::memory_order_relaxed)),
+        0x3fff, 0);
+}
+
+
+void Pfm2AudioProcessor::loadHardwarePreset(
+    int bankNumber, int presetNumber) {
+    if (isHardwareBusy()) {
+        noteProtocolChange("A hardware operation is still running.");
+        return;
+    }
+
+    // Claim first, send afterwards. Bank Select and Program Change replace the
+    // hardware edit buffer, so they must never slip into another instance's
+    // store batch. If the claim fails, nothing mutating goes out at all and no
+    // apparent legacy success is produced.
+    if (!beginEditorTransaction()) {
+        noteProtocolChange("Another plugin instance is talking to the "
+            "hardware. Nothing was sent. Try again in a moment.");
+        return;
+    }
+
+    setHardwarePresetTarget(bankNumber, presetNumber);
+    loadTargetBank = getHardwarePresetBank();
+    loadTargetPreset = getHardwarePresetNumber();
+    queueHardwarePresetSelection(loadTargetBank, loadTargetPreset);
+
+    // The firmware deliberately sends nothing after a program change, so the
+    // editor has to find out by itself whether the load actually happened.
+    // With the 3.00 alpha protocol we ask for the position and only pull once
+    // it matches; a missing bank otherwise looks exactly like a success.
+    if (isPositionQuerySupported()) {
+        positionQueryForLoad = true;
+        positionQueryPending = true;
+        pendingBankType = pendingBank = pendingPreset = pendingValid = -1;
+        positionDeadline = Time::getMillisecondCounter() + editorQueryTimeoutMs;
+        sendEditorRequest(PREENFM_EDITOR_REQ_POSITION, 0);
+        noteProtocolChange("Loading bank " + String(loadTargetBank)
+            + ", preset " + String(loadTargetPreset)
+            + ": confirming hardware position...");
+    }
+    else {
+        // Legacy path for firmware without the editor protocol. Loading from
+        // USB completes in firmware before the following MIDI messages are
+        // handled, but a short delay also keeps the subsequent full dump
+        // separate from the selection messages on slower hosts/interfaces.
+        hardwarePresetPullPending.store(true, std::memory_order_release);
+        hardwarePresetPullDeadline =
+            Time::getMillisecondCounter() + 250;
+        noteProtocolChange("Loading bank " + String(loadTargetBank)
+            + ", preset " + String(loadTargetPreset) + " and pulling...");
+    }
+
+    startTimer(editorTimerIntervalMs);
+}
+
+
+// Wrap-safe deadline test: comparing the raw uint32 millisecond counter with
+// >= breaks once every 49.7 days of uptime.
+static inline bool hasDeadlinePassed(uint32 now, uint32 deadline) noexcept {
+    return static_cast<int32>(now - deadline) >= 0;
+}
+
+
+void Pfm2AudioProcessor::timerCallback() {
+    const uint32 now = Time::getMillisecondCounter();
+
+    // A device change invalidates everything still queued, so an open
+    // transaction can never complete on the device it was started for.
+    if (transactionToken != Pfm2MidiDevice::invalidTransactionToken
+        && !isTransactionDeviceCurrent()) {
+        abandonTransactionForDeviceChange();
+        stopTimer();
+        return;
+    }
+
+    if (hardwarePresetPullPending.load(std::memory_order_acquire)
+        && hasDeadlinePassed(now, hardwarePresetPullDeadline)) {
+        if (hardwarePresetPullPending.exchange(false,
+            std::memory_order_acq_rel)) {
+            requestCurrentHardwarePreset();
+            // The legacy load path holds the claim until the pull is issued.
+            finishEditorTransaction();
+        }
+    }
+
+    serviceEditorProtocolTimeouts(now);
+
+    if (!hardwarePresetPullPending.load(std::memory_order_acquire)
+        && editorProtocolState != EditorProtocolState::querying
+        && !positionQueryPending
+        && storeState == HardwareStoreState::idle) {
+        stopTimer();
+    }
+}
+
+
+//==============================================================================
+// Editor remote protocol, firmware 3.00 alpha.
+// Everything below runs on the message thread only.
+//==============================================================================
+
+void Pfm2AudioProcessor::sendEditorRequest(int requestId, int value) {
+    pfm2MidiDevice->queueNrpn(jlimit(1, 16,
+        currentMidiChannel.load(std::memory_order_relaxed)),
+        PREENFM_EDITOR_NRPN_FIRST + requestId, value);
+}
+
+
+void Pfm2AudioProcessor::noteProtocolChange(const String& operationText) {
+    if (operationText.isNotEmpty()) {
+        lastOperationText = operationText;
+    }
+    ++protocolRevision;
+}
+
+
+bool Pfm2AudioProcessor::beginEditorTransaction() {
+    const uint32_t token = pfm2MidiDevice->tryBeginEditorTransaction();
+    if (token == Pfm2MidiDevice::invalidTransactionToken) {
+        return false;
+    }
+
+    transactionToken = token;
+    transactionDeviceGeneration = pfm2MidiDevice->getDeviceGeneration();
+    return true;
+}
+
+
+void Pfm2AudioProcessor::finishEditorTransaction() {
+    pfm2MidiDevice->endEditorTransaction(transactionToken);
+    transactionToken = Pfm2MidiDevice::invalidTransactionToken;
+}
+
+
+bool Pfm2AudioProcessor::isTransactionDeviceCurrent() const noexcept {
+    return transactionDeviceGeneration == pfm2MidiDevice->getDeviceGeneration();
+}
+
+
+void Pfm2AudioProcessor::abandonTransactionForDeviceChange() {
+    // Everything still queued for the previous device is discarded by the
+    // device layer, so an open transaction can never be completed. A store in
+    // flight has an unknown outcome and is latched as such.
+    if (storeState != HardwareStoreState::idle) {
+        storeOutcomeUnknown = true;
+        unknownStoreBank = storeTargetBank;
+        unknownStorePreset = storeTargetPreset;
+        noteProtocolChange("Device changed during a store into bank "
+            + String(storeTargetBank) + ", preset " + String(storeTargetPreset)
+            + ". Result unknown - check the hardware before storing again.");
+    }
+
+    storeState = HardwareStoreState::idle;
+    storeTargetWire = -1;
+    positionQueryPending = false;
+    positionQueryForLoad = false;
+    hardwarePresetPullPending.store(false, std::memory_order_release);
+    if (editorProtocolState == EditorProtocolState::querying) {
+        editorProtocolState = EditorProtocolState::unknown;
+    }
+    finishEditorTransaction();
+}
+
+
+bool Pfm2AudioProcessor::buildStoreBatch(int storeTargetValue,
+    std::vector<Pfm2MidiDevice::NrpnItem>& items) const {
+    items.clear();
+
+    // The snapshot is frozen here, before anything is sent. Reading the
+    // parameters again while the batch is being transmitted would let host
+    // automation slip a different value into the middle of the patch even
+    // though the MIDI output itself is exclusive.
+    const String currentPresetName = getPresetName();
+    char nameToSend[maximumPresetNameLength + 1] = {};
+    for (int k = 0; k < currentPresetName.length()
+        && k < maximumPresetNameLength; k++) {
+        nameToSend[k] = static_cast<char>(currentPresetName[k]);
+    }
+    for (int k = 0; k < maximumPresetNameLength; k++) {
+        items.push_back({ static_cast<uint16_t>(PREENFM2_NRPN_LETTER1 + k),
+            static_cast<uint16_t>(static_cast<unsigned char>(nameToSend[k])) });
+    }
+
+    const auto& parameterSet = getParameters();
+    const int firstInternalParameterIndex = nrpmIndex[PREENFM_NRPN_PFMTYPE];
+    const int currentPfmType = pfmType.load(std::memory_order_relaxed);
+
+    for (int p = 0; p < parameterSet.size(); p++) {
+        if (firstInternalParameterIndex >= 0 && p >= firstInternalParameterIndex) {
+            break;
+        }
+
+        auto* midifiedFP = static_cast<MidifiedFloatParameter*>(parameterSet[p]);
+        if (midifiedFP == nullptr) {
+            continue;
+        }
+
+        const int nrpnParam = midifiedFP->getNrpnParam();
+        if (nrpnParam < 0 || nrpnParam >= nrpnLookupSize) {
+            continue;
+        }
+        if (currentPfmType == 1 && nrpmIndex[nrpnParam] == -1) {
+            continue;
+        }
+        if (currentPfmType == 1 && midifiedFP == playModeParam) {
+            continue;
+        }
+        if (currentPfmType == 2 && midifiedFP == voicesParam) {
+            continue;
+        }
+
+        const int nrpnValue = midifiedFP->getNrpnValue();
+        if (nrpnValue < 0 || nrpnValue > 0x3fff) {
+            return false;
+        }
+        items.push_back({ static_cast<uint16_t>(nrpnParam),
+            static_cast<uint16_t>(nrpnValue) });
+    }
+
+    // The store request is the last element of the same batch, so nothing can
+    // modify the hardware edit buffer between the snapshot and the write.
+    items.push_back({
+        static_cast<uint16_t>(PREENFM_EDITOR_NRPN_FIRST + PREENFM_EDITOR_REQ_STORE),
+        static_cast<uint16_t>(storeTargetValue) });
+    return true;
+}
+
+
+void Pfm2AudioProcessor::requestEditorCapabilities() {
+    if (editorProtocolState == EditorProtocolState::querying) {
+        return;
+    }
+
+    if (!beginEditorTransaction()) {
+        noteProtocolChange("Another plugin instance is talking to the "
+            "hardware. Try again in a moment.");
+        return;
+    }
+
+    editorProtocolState = EditorProtocolState::querying;
+    editorProtocolVersion = 0;
+    editorCapabilities = 0;
+    capabilityVersionSeen = false;
+    capabilityDeadline = Time::getMillisecondCounter() + editorQueryTimeoutMs;
+    sendEditorRequest(PREENFM_EDITOR_REQ_CAPABILITY, 0);
+    noteProtocolChange("Checking hardware protocol...");
+    startTimer(editorTimerIntervalMs);
+}
+
+
+void Pfm2AudioProcessor::requestHardwarePosition() {
+    if (positionQueryPending) {
+        return;
+    }
+
+    if (!isPositionQuerySupported()) {
+        noteProtocolChange("Position query needs the 3.00 alpha protocol. "
+            "Run Check protocol first.");
+        return;
+    }
+
+    if (!beginEditorTransaction()) {
+        noteProtocolChange("Another plugin instance is talking to the "
+            "hardware. Try again in a moment.");
+        return;
+    }
+
+    positionQueryForLoad = false;
+    positionQueryPending = true;
+    pendingBankType = pendingBank = pendingPreset = pendingValid = -1;
+    positionDeadline = Time::getMillisecondCounter() + editorQueryTimeoutMs;
+    sendEditorRequest(PREENFM_EDITOR_REQ_POSITION, 0);
+    noteProtocolChange("Reading hardware position...");
+    startTimer(editorTimerIntervalMs);
+}
+
+
+bool Pfm2AudioProcessor::beginHardwareStore(int bankNumber, int presetNumber) {
+    if (!isStoreSupported()) {
+        noteProtocolChange("Store needs firmware 3.00 alpha. "
+            "Run Check protocol first.");
+        return false;
+    }
+
+    if (isHardwareBusy()) {
+        noteProtocolChange("A hardware operation is still running.");
+        return false;
+    }
+
+    const int bank = jlimit(1, PREENFM_EDITOR_BANK_COUNT, bankNumber);
+    const int preset = jlimit(1, PREENFM_EDITOR_PRESET_COUNT, presetNumber);
+    if (bank != bankNumber || preset != presetNumber) {
+        noteProtocolChange("Invalid store target.");
+        return false;
+    }
+
+    if (!beginEditorTransaction()) {
+        noteProtocolChange("Another plugin instance is talking to the "
+            "hardware. Try again in a moment.");
+        return false;
+    }
+
+    const int targetWire = ((bank - 1) << 7) | (preset - 1);
+
+    // Freeze the snapshot first, then hand the whole thing to the device as
+    // one atomic batch: name letters, every parameter, and the store request.
+    std::vector<Pfm2MidiDevice::NrpnItem> batch;
+    if (!buildStoreBatch(targetWire, batch)) {
+        finishEditorTransaction();
+        noteProtocolChange("Store aborted: the patch snapshot is invalid.");
+        return false;
+    }
+
+    // Either the whole run is reserved or nothing is enqueued at all, so a
+    // rejected batch can never leave a half transmitted patch on the wire.
+    if (!pfm2MidiDevice->queueNrpnBatch(jlimit(1, 16,
+        currentMidiChannel.load(std::memory_order_relaxed)),
+        batch.data(), batch.size())) {
+        finishEditorTransaction();
+        noteProtocolChange("Store aborted: the MIDI output queue could not "
+            "take the complete patch. Nothing was sent.");
+        return false;
+    }
+
+    storeTargetBank = bank;
+    storeTargetPreset = preset;
+    storeTargetWire = targetWire;
+    storeState = HardwareStoreState::awaitingEcho;
+    storeDeadline = Time::getMillisecondCounter() + editorStoreTimeoutMs;
+    noteProtocolChange("Storing into bank " + String(bank) + ", preset "
+        + String(preset) + "...");
+    startTimer(editorTimerIntervalMs);
+    return true;
+}
+
+
+void Pfm2AudioProcessor::applyReportedPosition() {
+    // Only a complete group for a regular patch bank counts. VALID = 0 simply
+    // means no patch bank is selected on the hardware; that is not an error
+    // and must not overwrite the browser target.
+    const bool complete = pendingBankType >= 0 && pendingBank >= 0
+        && pendingPreset >= 0 && pendingValid >= 0;
+    if (!complete) {
+        return;
+    }
+
+    positionQueryPending = false;
+    finishEditorTransaction();
+
+    const bool usable = pendingBankType == PREENFM_EDITOR_BANKTYPE_PATCH
+        && pendingValid == 1
+        && pendingBank >= 0 && pendingBank < PREENFM_EDITOR_BANK_COUNT
+        && pendingPreset >= 0 && pendingPreset < PREENFM_EDITOR_PRESET_COUNT;
+
+    if (!usable) {
+        reportedPositionValid = false;
+        reportedBank = 0;
+        reportedPreset = 0;
+
+        if (positionQueryForLoad) {
+            positionQueryForLoad = false;
+            noteProtocolChange("Load failed: the hardware reports no selected "
+                "patch bank. Bank " + String(loadTargetBank)
+                + " is probably missing on the SD card.");
+        }
+        else {
+            noteProtocolChange("Hardware position unknown "
+                "(no patch bank selected).");
+        }
+        return;
+    }
+
+    reportedBank = pendingBank + 1;
+    reportedPreset = pendingPreset + 1;
+    reportedPositionValid = true;
+
+    // An explicit, successful position read is the resynchronisation that
+    // clears a latched unknown store outcome.
+    if (storeOutcomeUnknown && !positionQueryForLoad) {
+        storeOutcomeUnknown = false;
+        unknownStoreBank = 0;
+        unknownStorePreset = 0;
+    }
+
+    if (positionQueryForLoad) {
+        positionQueryForLoad = false;
+        if (reportedBank == loadTargetBank
+            && reportedPreset == loadTargetPreset) {
+            requestCurrentHardwarePreset();
+            noteProtocolChange("Loaded bank " + String(reportedBank)
+                + ", preset " + String(reportedPreset) + ", pulling...");
+        }
+        else {
+            // Never claim a successful load. The usual cause is a bank that
+            // does not exist, in which case the hardware stays where it was.
+            noteProtocolChange("Load failed: hardware is at bank "
+                + String(reportedBank) + ", preset " + String(reportedPreset)
+                + ", not at the requested bank " + String(loadTargetBank)
+                + ", preset " + String(loadTargetPreset)
+                + ". The bank is probably missing.");
+        }
+    }
+    else {
+        noteProtocolChange("Hardware is at bank " + String(reportedBank)
+            + ", preset " + String(reportedPreset) + ".");
+    }
+}
+
+
+void Pfm2AudioProcessor::handleEditorProtocolResponse(int responseId,
+    int value) {
+    switch (responseId) {
+    case PREENFM_EDITOR_RSP_PROTOCOL_VERSION:
+        if (editorProtocolState != EditorProtocolState::querying) {
+            return;   // unsolicited or late, ignore
+        }
+        editorProtocolVersion = value;
+        capabilityVersionSeen = true;
+        return;
+
+    case PREENFM_EDITOR_RSP_CAPABILITIES:
+        if (editorProtocolState != EditorProtocolState::querying
+            || !capabilityVersionSeen) {
+            return;
+        }
+        editorCapabilities = value;
+        finishEditorTransaction();
+        if (editorProtocolVersion == PREENFM_EDITOR_PROTOCOL_VERSION) {
+            editorProtocolState = EditorProtocolState::supported;
+            noteProtocolChange("Protocol version "
+                + String(editorProtocolVersion) + " detected"
+                + (isStoreSupported() ? ", Store available." : "."));
+        }
+        else {
+            editorProtocolState = EditorProtocolState::unsupported;
+            noteProtocolChange("Unsupported protocol version "
+                + String(editorProtocolVersion)
+                + ". This editor speaks version "
+                + String(PREENFM_EDITOR_PROTOCOL_VERSION) + ".");
+        }
+        return;
+
+    case PREENFM_EDITOR_RSP_POSITION_BANKTYPE:
+        if (positionQueryPending) { pendingBankType = value; applyReportedPosition(); }
+        return;
+    case PREENFM_EDITOR_RSP_POSITION_BANK:
+        if (positionQueryPending) { pendingBank = value; applyReportedPosition(); }
+        return;
+    case PREENFM_EDITOR_RSP_POSITION_PRESET:
+        if (positionQueryPending) { pendingPreset = value; applyReportedPosition(); }
+        return;
+    case PREENFM_EDITOR_RSP_POSITION_VALID:
+        if (positionQueryPending) { pendingValid = value; applyReportedPosition(); }
+        return;
+
+    case PREENFM_EDITOR_RSP_STORE_TARGET:
+        if (storeState != HardwareStoreState::awaitingEcho) {
+            return;
+        }
+        if (value != storeTargetWire) {
+            // A target we did not ask for. Do not treat a later status 0 as
+            // our success.
+            storeState = HardwareStoreState::idle;
+            storeTargetWire = -1;
+            finishEditorTransaction();
+            noteProtocolChange("Store failed: the hardware echoed a different "
+                "target. Nothing was written by this editor.");
+            return;
+        }
+        storeState = HardwareStoreState::awaitingStatus;
+        return;
+
+    case PREENFM_EDITOR_RSP_STORE_STATUS:
+    {
+        // A status without a matching target echo is never a success.
+        if (storeState != HardwareStoreState::awaitingStatus) {
+            if (storeState == HardwareStoreState::awaitingEcho) {
+                storeState = HardwareStoreState::idle;
+                storeTargetWire = -1;
+                finishEditorTransaction();
+                noteProtocolChange("Store failed: status arrived without a "
+                    "target echo (protocol error).");
+            }
+            return;
+        }
+
+        const int bank = storeTargetBank;
+        const int preset = storeTargetPreset;
+        storeState = HardwareStoreState::idle;
+        storeTargetWire = -1;
+        finishEditorTransaction();
+
+        switch (value) {
+        case PREENFM_EDITOR_STATUS_OK:
+            reportedBank = bank;
+            reportedPreset = preset;
+            reportedPositionValid = true;
+            // Status 0 means the firmware saved its current edit buffer. It
+            // does not prove that every preceding NRPN of the snapshot really
+            // arrived; only a readback could show that.
+            noteProtocolChange("Stored into bank " + String(bank)
+                + ", preset " + String(preset)
+                + " (firmware saved its edit buffer; verify by reloading).");
+            break;
+        case PREENFM_EDITOR_STATUS_BANK_NOT_FOUND:
+            noteProtocolChange("Store failed: bank " + String(bank)
+                + " is missing or read-only on the hardware. Nothing written.");
+            break;
+        case PREENFM_EDITOR_STATUS_INVALID_TARGET:
+            noteProtocolChange("Store failed: bank " + String(bank)
+                + ", preset " + String(preset)
+                + " is not a valid slot. Nothing written.");
+            break;
+        case PREENFM_EDITOR_STATUS_AMBIGUOUS_CHANNEL:
+            noteProtocolChange("Store failed: MIDI channel "
+                + String(currentMidiChannel.load(std::memory_order_relaxed))
+                + " does not address exactly one timbre. Give the timbre its "
+                "own dedicated MIDI channel. Nothing written.");
+            break;
+        case PREENFM_EDITOR_STATUS_STORAGE_ERROR:
+            // savePreenFMPatch() writes the payload and the padding in two
+            // separate steps, so a failure of the second one leaves the slot
+            // already changed. Do not claim that nothing was written.
+            storeOutcomeUnknown = true;
+            unknownStoreBank = bank;
+            unknownStorePreset = preset;
+            noteProtocolChange("Storage error at bank " + String(bank)
+                + ", preset " + String(preset)
+                + ". The slot may already be changed or incomplete - check it "
+                "on the hardware before storing there again.");
+            break;
+        case PREENFM_EDITOR_STATUS_PROTOCOL_ERROR:
+            noteProtocolChange("Store failed: the hardware reported a protocol "
+                "error. Nothing written.");
+            break;
+        default:
+            noteProtocolChange("Store failed: unknown status "
+                + String(value) + ". Nothing written.");
+            break;
+        }
+        return;
+    }
+
+    default:
+        // Unknown response id: ignore safely, a later firmware may add some.
+        return;
+    }
+}
+
+
+void Pfm2AudioProcessor::serviceEditorProtocolTimeouts(uint32 now) {
+    if (editorProtocolState == EditorProtocolState::querying
+        && hasDeadlinePassed(now, capabilityDeadline)) {
+        editorProtocolState = EditorProtocolState::unsupported;
+        finishEditorTransaction();
+        noteProtocolChange("Protocol not detected. Load and Pull still work. "
+            "For Store, the hardware needs firmware 3.00 alpha and "
+            "Receives set to NRPN or CC & NRPN.");
+    }
+
+    if (positionQueryPending && hasDeadlinePassed(now, positionDeadline)) {
+        positionQueryPending = false;
+        finishEditorTransaction();
+
+        if (positionQueryForLoad) {
+            positionQueryForLoad = false;
+            // Fall back to the legacy behaviour so a load still works if the
+            // position answer got lost.
+            hardwarePresetPullPending.store(true, std::memory_order_release);
+            hardwarePresetPullDeadline = now + 250;
+            noteProtocolChange("No position answer, pulling without "
+                "confirmation.");
+        }
+        else {
+            noteProtocolChange("No position answer from the hardware.");
+        }
+    }
+
+    if (storeState != HardwareStoreState::idle
+        && hasDeadlinePassed(now, storeDeadline)) {
+        const int bank = storeTargetBank;
+        const int preset = storeTargetPreset;
+        storeState = HardwareStoreState::idle;
+        storeTargetWire = -1;
+        finishEditorTransaction();
+
+        // The firmware writes before it answers, so a timeout does not mean
+        // "nothing happened". The outcome is latched as unknown: no further
+        // store is offered and nothing is retried automatically until the
+        // position has been resynchronised.
+        storeOutcomeUnknown = true;
+        unknownStoreBank = bank;
+        unknownStorePreset = preset;
+        noteProtocolChange("Store result UNKNOWN for bank " + String(bank)
+            + ", preset " + String(preset)
+            + ". The slot may already have been written. Do not overwrite it "
+            "again - resynchronise with Position and check the hardware first.");
+    }
+}
+
+
+String Pfm2AudioProcessor::getEditorProtocolStatusText() const {
+    switch (editorProtocolState) {
+    case EditorProtocolState::unknown:
+        return "Protocol: not checked";
+    case EditorProtocolState::querying:
+        return "Protocol: checking...";
+    case EditorProtocolState::unsupported:
+        return "Protocol: not available (Load/Pull only)";
+    case EditorProtocolState::supported:
+        return "Protocol: v" + String(editorProtocolVersion)
+            + (isStoreSupported() ? " (Store, Position)" : " (limited)");
+    }
+    return {};
+}
+
+
 //==============================================================================
 void Pfm2AudioProcessor::getStateInformation(MemoryBlock& destData)
 {
@@ -684,6 +1344,8 @@ void Pfm2AudioProcessor::getStateInformation(MemoryBlock& destData)
     XmlElement xml("PreenFM2AppStatus");
 
     xml.setAttribute("presetName", getPresetName().trim());
+    xml.setAttribute("HardwarePresetBank", getHardwarePresetBank());
+    xml.setAttribute("HardwarePresetNumber", getHardwarePresetNumber());
 
     // add some attributes to it..
     const auto& parameterSet = getParameters();
@@ -745,6 +1407,10 @@ void Pfm2AudioProcessor::setStateInformation(const void* data, int sizeInBytes, 
 
         if (xmlState->hasTagName("PreenFM2AppStatus")) {
             const auto& parameterSet = getParameters();
+
+            setHardwarePresetTarget(
+                xmlState->getIntAttribute("HardwarePresetBank", 1),
+                xmlState->getIntAttribute("HardwarePresetNumber", 1));
 
             float value;
             for (int p = 0; p < parameterSet.size(); p++) {
@@ -960,7 +1626,24 @@ void Pfm2AudioProcessor::hostParameterChanged(int index)
  */
 void Pfm2AudioProcessor::handleIncomingNrpn(int param, int nrpnValue) {
     // NRPM from the preenFM2
-	if (param < 0 || param >= nrpnLookupSize) {
+	if (param < 0) {
+		return;
+	}
+
+    // Editor remote protocol responses live on NRPN page 4 (parameters
+    // 512..639) and are control answers, not plugin parameters. They are
+    // intercepted before the parameter lookup so they can never be mistaken
+    // for a synth parameter, a preset name letter or a step sequencer value.
+    // This runs on the message thread: the MIDI callback only fed the value
+    // into incomingNrpnFifo.
+    if (param >= PREENFM_EDITOR_NRPN_FIRST
+        && param <= PREENFM_EDITOR_NRPN_LAST) {
+        handleEditorProtocolResponse(param - PREENFM_EDITOR_NRPN_FIRST,
+            nrpnValue);
+        return;
+    }
+
+	if (param >= nrpnLookupSize) {
 		return;
 	}
 
@@ -1356,6 +2039,15 @@ void Pfm2AudioProcessor::handleIncomingMidiMessage(MidiInput*, const MidiMessage
             int value = (int)(currentNrpn.valueMSB << 7) + currentNrpn.valueLSB;
 
             queueIncomingNrpn(param, value);
+
+            // Editor page 4 commands are consumed, exactly as the firmware
+            // consumes them: a second lone CC38 must not repeat the same
+            // response. The historic behaviour of the ordinary parameter
+            // pages, where the address and value state deliberately survive
+            // several data entry messages, is left untouched.
+            if (currentNrpn.paramMSB == PREENFM_EDITOR_NRPN_PAGE) {
+                currentNrpn.hasValueMSB = false;
+            }
             break;
         }
         }
@@ -1429,6 +2121,22 @@ void Pfm2AudioProcessor::handlePartialSysexMessage(MidiInput*, const uint8*, int
 
 void Pfm2AudioProcessor::choseNewMidiDevice() {
     pfm2MidiDevice->forceChoseNewDevices();
+
+    // Anything in flight belonged to the previous device generation and has
+    // been discarded by the device layer; a store in flight becomes unknown.
+    if (transactionToken != Pfm2MidiDevice::invalidTransactionToken) {
+        abandonTransactionForDeviceChange();
+    }
+
+    // A different port may lead to a different instrument, so anything we
+    // knew about the protocol and the hardware position is stale now.
+    editorProtocolState = EditorProtocolState::unknown;
+    editorProtocolVersion = 0;
+    editorCapabilities = 0;
+    reportedBank = 0;
+    reportedPreset = 0;
+    reportedPositionValid = false;
+    requestEditorCapabilities();
 }
 
 //==============================================================================

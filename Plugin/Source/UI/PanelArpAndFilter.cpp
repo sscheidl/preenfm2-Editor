@@ -574,9 +574,9 @@ void PanelArpAndFilter::resized()
     constexpr int moduleGap = 10;
     const int arpHeight = roundToInt (content.getHeight() * 0.30f);
     const int filterHeight = roundToInt (content.getHeight() * 0.22f);
-    auto arpBounds = content.removeFromTop (arpHeight);
-    content.removeFromTop (moduleGap);
     auto filterBounds = content.removeFromTop (filterHeight);
+    content.removeFromTop (moduleGap);
+    auto arpBounds = content.removeFromTop (arpHeight);
     content.removeFromTop (moduleGap);
     auto scalingBounds = content;
 

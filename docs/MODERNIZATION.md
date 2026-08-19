@@ -10,7 +10,7 @@ current Visual Studio installation.
 ## Current build
 
 - Product name: PreenFM+
-- Project version: 4.0.1
+- Project version: 4.0.3
 - JUCE: 9.0.0, fetched and pinned by CMake
 - Language level: C++17
 - Windows toolchain: Visual Studio 2026 Build Tools 18.9.0, x64
@@ -90,6 +90,82 @@ are 4.x integration corrections rather than defects in the original release.
 - VST3 binary architecture and standalone launch smoke tests
 
 Hardware MIDI exchange and loading in representative DAWs remain manual tests.
+
+Version 4.0.2 adds a hardware-preset browser for native PreenFM patch banks.
+The UI uses human-readable bank and preset positions 1-128, sends the firmware's
+zero-based CC#32 and Program Change values, and requests a full NRPN dump after
+the selected patch has loaded. The selected target is stored per plugin
+instance.
+
+Version 4.0.3 connects the editor to the PreenFM2 firmware `3.00 alpha` editor
+remote protocol, protocol version 1. The protocol occupies NRPN page 4
+(parameter numbers 512-639), a range no earlier firmware or editor uses, so an
+older firmware simply ignores the requests and answers nothing.
+
+- **Capability detection.** The editor sends a capability query after choosing a
+  MIDI device and when the preset browser opens, and offers an explicit
+  re-check. Store and the position query are enabled only after the firmware
+  has confirmed protocol version 1 and the matching capability bits. Support is
+  never inferred from a firmware version string. On timeout the editor reports
+  that the protocol is unavailable; Load and Pull keep working.
+- **Position query.** A load now asks where the hardware actually is and only
+  pulls when the reported bank and preset match the request. A missing bank is
+  therefore reported instead of silently looking like a successful load. Bank
+  type must be 0, `VALID` must be 1 and both values must be inside the firmware
+  limits; `VALID = 0` is treated as an unknown position, not an error, and does
+  not overwrite the browser target.
+- **Store is an atomic output batch.** The firmware writes its *live edit
+  buffer*, so a store is only correct if nothing modifies that buffer between
+  the first byte of the pushed snapshot and the store request. Serialising only
+  the page-4 request is not enough: the snapshot itself consists of ordinary
+  NRPNs, and the shared output queue accepts events from every producer.
+  `Pfm2MidiDevice::queueNrpnBatch()` therefore reserves a contiguous run of
+  queue cells with a single compare-and-swap on the enqueue position. Competing
+  producers are never blocked - they simply receive a later position, so their
+  events are emitted either completely before or completely after the batch.
+  Either the whole run is reserved or nothing is enqueued, so a rejected batch
+  cannot leave a half-transmitted patch on the wire. The parameter values are
+  snapshotted before the reservation, so host automation cannot alter the patch
+  while it is being sent.
+- **Two separate concerns.** Response correlation (who may complete a
+  transaction) and MIDI exclusivity (what may be interleaved on the wire) are
+  deliberately not merged into one global lock. The first is a monotonic
+  transaction token in the shared device; the second is the batch reservation
+  above. Nothing in either path blocks the audio thread: `processBlock()` uses
+  the same non-blocking single-cell enqueue as before and drops on overflow.
+- **Transaction identity.** The claim is a monotonically increasing token
+  rather than a raw `this` pointer, and it is not re-entrant. Only the holder
+  of the exact token can release it, the processor destructor always releases,
+  and a late answer belonging to an older generation can never complete a newer
+  transaction.
+- **Device generation.** Every queued event carries the device generation it
+  was created for. A device change bumps the generation, so events built for
+  the previous device are discarded instead of being replayed into whatever is
+  opened next, and a store that was in flight is marked as unknown.
+- **Honest outcomes.** A store counts as successful only when the echoed target
+  matches the request and a following status 0 arrives. A timeout is latched as
+  an *unknown* outcome, not a failure: the firmware writes before it answers, so
+  the slot may already have been written. Store stays disabled and nothing is
+  retried automatically until an explicit position resync. Status 4 likewise
+  does not claim that nothing was written, because `savePreenFMPatch()` writes
+  payload and padding in two steps. Status 0 is reported as "the firmware saved
+  its edit buffer", which is what it proves - a full readback would be needed to
+  prove that every preceding NRPN arrived.
+- **Bank limit.** Regular patch banks are limited to 1-64, matching the
+  firmware's `NUMBEROFPREENFMBANKS`, and not to the theoretical width of CC32.
+  Old saved states holding bank 65-128 are clamped to 64, never wrapped to 1.
+
+Required hardware settings:
+
+| setting | needed for |
+|---|---|
+| `Receives: NRPN` or `CC & NRPN` | every editor-protocol request; with `None` or `CC` the firmware answers nothing |
+| `Program change: Yes` | loading a preset |
+| `USB MIDI: In/Out` | receiving answers over USB; with `Off` or `In` they only reach the DIN output |
+| a dedicated timbre MIDI channel | Store; the firmware refuses with status 3 unless the channel maps to exactly one timbre |
+
+The `Send:` setting has no effect on this protocol; responses are emitted
+regardless.
 
 ## Remaining work
 
