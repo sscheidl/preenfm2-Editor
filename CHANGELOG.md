@@ -2,15 +2,20 @@
 
 This project follows semantic versioning.
 
-## 4.0.3 (in development)
+## 4.0.4 (in development)
 
 - Replaced the modal hardware-preset callout with a permanent two-row header,
   keeping bank, preset, Load, Store, Position and protocol status visible on all
   editor pages. The redundant Presets and manual Protocol buttons were removed.
+- Grew the editor to a 900 x 778 minimum and a 1000 x 818 default size to make
+  room for the new header row.
 - Reordered the Arp & Filter page so the filter appears before the arpeggiator,
   following the more familiar synthesizer signal-flow workflow.
 - Added explicit upstream/VOSIM credits and the tAUREON experimental
   AI-assisted development notice.
+
+## 4.0.3
+
 - **Store is now an atomic output batch.** The frozen patch snapshot, the twelve
   name letters and the store request reserve one contiguous run of queue cells
   with a single compare-and-swap. Competing producers - other plugin instances,

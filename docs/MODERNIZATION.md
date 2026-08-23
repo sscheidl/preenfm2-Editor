@@ -10,7 +10,7 @@ current Visual Studio installation.
 ## Current build
 
 - Product name: PreenFM+
-- Project version: 4.0.3
+- Project version: 4.0.4
 - JUCE: 9.0.0, fetched and pinned by CMake
 - Language level: C++17
 - Windows toolchain: Visual Studio 2026 Build Tools 18.9.0, x64
@@ -39,7 +39,7 @@ reproducible CMake configuration. A local JUCE checkout can be selected with
 - Preserved the released VST3 component class ID explicitly during the PreenFM+
   rename, so hosts can continue to associate the new binary with existing
   sessions even though JUCE normally derives this ID partly from the name.
-- Enforced a minimum editor size of 900 x 710 pixels, including when restoring
+- Enforced a minimum editor size of 900 x 778 pixels, including when restoring
   an older session that stored an unusably small editor size.
 - Added the four VOSIM algorithms (29-32) and the Brownian, Wandering and Flow
   LFO shapes from PreenFM3 v1.03 and the matching `pvig/preenfm2` VOSIM
@@ -97,13 +97,23 @@ zero-based CC#32 and Program Change values, and requests a full NRPN dump after
 the selected patch has loaded. The selected target is stored per plugin
 instance.
 
+Version 4.0.4 moves the hardware-preset controls out of the modal callout into a
+permanent two-row header above the tab bar, so bank, preset, Load, Store,
+Position, the reported hardware position and the protocol status stay visible on
+every editor page instead of covering the parameters. The former Presets button
+and the manual Protocol button are gone; the capability query now runs
+automatically when the header is created and after every MIDI device change.
+The editor minimum grew to 900 x 778 and the default to 1000 x 818 to make room
+for it. On the Arp & Filter page the filter section is now placed above the
+arpeggiator, matching the more familiar signal-flow order.
+
 Version 4.0.3 connects the editor to the PreenFM2 firmware `3.00 alpha` editor
 remote protocol, protocol version 1. The protocol occupies NRPN page 4
 (parameter numbers 512-639), a range no earlier firmware or editor uses, so an
 older firmware simply ignores the requests and answers nothing.
 
 - **Capability detection.** The editor sends a capability query after choosing a
-  MIDI device and when the preset browser opens, and offers an explicit
+  MIDI device and when the hardware-preset header is created, and offers an explicit
   re-check. Store and the position query are enabled only after the firmware
   has confirmed protocol version 1 and the matching capability bits. Support is
   never inferred from a firmware version string. On timeout the editor reports

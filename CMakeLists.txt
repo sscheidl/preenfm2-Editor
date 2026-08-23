@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(PreenfmEditor
-    VERSION 4.0.3
+    VERSION 4.0.4
     DESCRIPTION "MIDI editor for the preenfm2 and preenfm3 synthesizers"
     LANGUAGES C CXX)
 
