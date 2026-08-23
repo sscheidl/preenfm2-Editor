@@ -34,6 +34,21 @@ direction are maintained as a tAUREON experimental project with assistance
 from Codex and Claude Code. The AI services are development tools and are not
 the upstream authors or maintainers of PreenFM.
 
+## License
+
+PreenFM+ is free software, licensed under the **GNU General Public License
+v3.0 or later** (GPLv3+). The original editor's source files carry Xavier
+Hosxe's GPLv3+ copyright and license header; that license applies to the
+project as a whole, and the full text is in [LICENSE](LICENSE).
+
+This build also links [JUCE](https://juce.com/) 9, which is dual-licensed
+under AGPLv3 or a commercial JUCE licence. Distributing this open build must
+therefore comply with the AGPLv3 requirements (in particular, making the
+complete corresponding source available); a closed-source build would need a
+commercial JUCE licence instead. The bundled Exo font keeps its own
+[SIL Open Font License](<Plugin/Source/UI/OTF/SIL Open Font License.txt>). See
+[docs/MODERNIZATION.md](docs/MODERNIZATION.md#licensing-note) for more detail.
+
 ## Modern CMake build
 
 PreenFM+ 4.0.4 targets JUCE 9.0.0, C++17, VST3 and a standalone plugin host.
