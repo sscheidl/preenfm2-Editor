@@ -86,16 +86,13 @@ http://ixox.fr/forum/index.php?topic=69349.0
 # Screenshots
 
 <br />
-<img src="docs/pfmEditor3_Engine.PNG"  />
+<img src="docs/pfmEditor4_Engine.PNG"  />
 <br />
 <br />
-<img src="docs/pfmEditor3_Modulation.PNG"/>
+<img src="docs/pfmEditor4_Modulation.PNG"/>
 <br />
 <br />
-<img src="docs/pfmEditor3_Arp.PNG"  />
-<br />
-<br />
-<img src="docs/pfmEditor3_Organize.PNG" />
+<img src="docs/pfmEditor4_ArpFilter.PNG"  />
 <br />
 <br />
 <br />
