@@ -109,19 +109,19 @@ validation status, corrected legacy bugs and remaining technical debt. Version
 4.x includes substantial correctness work inherited from the original editor in
 addition to its new firmware and GUI support.
 
-## PreenFM+ 4.0.4 interface
+## PreenFM+ 4.x interface
 
 ### Engine and operators
 
-![PreenFM+ 4.0.4 Engine page](docs/pfmEditor4_Engine.PNG)
+![PreenFM+ 4.x Engine page](docs/pfmEditor4_Engine.PNG)
 
 ### Modulation and step sequencers
 
-![PreenFM+ 4.0.4 Modulation page](docs/pfmEditor4_Modulation.PNG)
+![PreenFM+ 4.x Modulation page](docs/pfmEditor4_Modulation.PNG)
 
 ### Filter, arpeggiator and note scaling
 
-![PreenFM+ 4.0.4 Filter and Arpeggiator page](docs/pfmEditor4_ArpFilter.PNG)
+![PreenFM+ 4.x Filter and Arpeggiator page](docs/pfmEditor4_ArpFilter.PNG)
 
 For questions about the original PreenFM ecosystem, see the
 [PreenFM forum](https://ixox.fr/forum/index.php?topic=69349.0) and the
