@@ -1,6 +1,6 @@
 # PreenFM+
 
-PreenFM+ 4.0.4 is a modernized Windows x64 VST3 and standalone editor for the
+PreenFM+ 4.x is a modernized Windows x64 VST3 and standalone editor for the
 PreenFM2 and PreenFM3 hardware synthesizers. It combines the complete sound
 editing surface of Xavier Hosxe's original controller with a scalable JUCE 9
 interface, live bidirectional MIDI editing and direct hardware-preset workflow.
