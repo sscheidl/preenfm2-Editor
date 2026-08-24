@@ -1,7 +1,26 @@
 # PreenFM+
 
-You'll find here the source code of the software editor for the preenfm sound module (version 2 & 3). <br />
-It uses the [JUCE framework](https://juce.com/).
+PreenFM+ 4.0.4 is a modernized Windows x64 VST3 and standalone editor for the
+PreenFM2 and PreenFM3 hardware synthesizers. It combines the complete sound
+editing surface of Xavier Hosxe's original controller with a scalable JUCE 9
+interface, live bidirectional MIDI editing and direct hardware-preset workflow.
+
+## Current features
+
+- complete Engine, Modulation, Arpeggiator, Filter and Note Scaling editing;
+- modern scalable vector interface with a permanent hardware-preset header;
+- live parameter updates from editor to hardware and from hardware to editor;
+- host automation through VST3, tested in Studio One on Windows x64;
+- Push and Pull of the complete edit buffer;
+- hardware bank/preset selection, previous/next audition, position query and
+  direct Store with explicit overwrite confirmation and firmware status;
+- VOSIM algorithms 29-32 and LFO shapes 6-8;
+- guarded multi-instance MIDI transactions and deterministic protocol tests.
+
+PreenFM+ 4.x requires matching VOSIM firmware. The full Load, Position and Store
+workflow requires the experimental PreenFM2 `3.00 alpha` firmware and a
+dedicated timbre MIDI channel. Users of older firmware should remain on the
+original 3.x editor.
 
 > [!IMPORTANT]
 > **Experimental AI-assisted development.** PreenFM+ 4.x is a tAUREON
@@ -55,9 +74,6 @@ PreenFM+ 4.0.4 targets JUCE 9.0.0, C++17, VST3 and a standalone plugin host.
 JUCE is fetched automatically and pinned to a release tag, so no sibling `JUCE_6.0`
 directory or generated Projucer project is required.
 
-Version 4.x assumes PreenFM firmware with the VOSIM extension (algorithms 29-32
-and LFO shapes 6-8). Use a 3.x editor with older firmware.
-
 Requirements on Windows:
 
 - CMake 4.4 or newer
@@ -93,31 +109,20 @@ validation status, corrected legacy bugs and remaining technical debt. Version
 4.x includes substantial correctness work inherited from the original editor in
 addition to its new firmware and GUI support.
 
-There are compiled versions for macOS and Windows [here](https://github.com/Ixox/preenfm2Controller/releases).  
+## PreenFM+ 4.0.4 interface
 
-To start, follow these steps : 
+### Engine and operators
 
-<br />
-<img src="docs/toStart.PNG" width="600" />
-<br />
-<br />
-If you have any questions or suggestions, please use the preenfm forum.  
-This thread should be the one :   
-http://ixox.fr/forum/index.php?topic=69349.0
-<br />
-<br />
+![PreenFM+ 4.0.4 Engine page](docs/pfmEditor4_Engine.PNG)
 
+### Modulation and step sequencers
 
-# Screenshots
+![PreenFM+ 4.0.4 Modulation page](docs/pfmEditor4_Modulation.PNG)
 
-<br />
-<img src="docs/pfmEditor4_Engine.PNG"  />
-<br />
-<br />
-<img src="docs/pfmEditor4_Modulation.PNG"/>
-<br />
-<br />
-<img src="docs/pfmEditor4_ArpFilter.PNG"  />
-<br />
-<br />
-<br />
+### Filter, arpeggiator and note scaling
+
+![PreenFM+ 4.0.4 Filter and Arpeggiator page](docs/pfmEditor4_ArpFilter.PNG)
+
+For questions about the original PreenFM ecosystem, see the
+[PreenFM forum](https://ixox.fr/forum/index.php?topic=69349.0) and the
+[upstream editor repository](https://github.com/Ixox/preenfm2Controller).
