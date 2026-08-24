@@ -5,6 +5,12 @@ PreenFM2 and PreenFM3 hardware synthesizers. It combines the complete sound
 editing surface of Xavier Hosxe's original controller with a scalable JUCE 9
 interface, live bidirectional MIDI editing and direct hardware-preset workflow.
 
+<p align="center">
+  <img src="docs/PreenFM2_2026.png" alt="PreenFM2 test hardware running the 3.00 alpha firmware" width="900" />
+</p>
+
+The PreenFM2 test unit running the hardware-tested 3.00-alpha developer firmware.
+
 ## Current features
 
 - complete Engine, Modulation, Arpeggiator, Filter and Note Scaling editing;
