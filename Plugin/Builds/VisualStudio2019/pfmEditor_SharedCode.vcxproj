@@ -269,7 +269,6 @@
     <ClCompile Include="..\..\Source\UI\PanelArpAndFilter.cpp"/>
     <ClCompile Include="..\..\Source\UI\PanelEngine.cpp"/>
     <ClCompile Include="..\..\Source\UI\PanelModulation.cpp"/>
-    <ClCompile Include="..\..\Source\UI\png\AlgoPNG.cpp"/>
     <ClCompile Include="..\..\Source\UI\PreenLookAndFeel.cpp"/>
     <ClCompile Include="..\..\Source\UI\StepSequencer.cpp"/>
     <ClCompile Include="..\..\Source\ListProperty.cpp"/>
@@ -2247,7 +2246,6 @@
     <ClInclude Include="..\..\Source\UI\PanelEngine.h"/>
     <ClInclude Include="..\..\Source\UI\PanelModulation.h"/>
     <ClInclude Include="..\..\Source\UI\PanelOfComponents.h"/>
-    <ClInclude Include="..\..\Source\UI\png\AlgoPNG.h"/>
     <ClInclude Include="..\..\Source\UI\PreenLookAndFeel.h"/>
     <ClInclude Include="..\..\Source\UI\SliderPfm2.h"/>
     <ClInclude Include="..\..\Source\UI\StepSequencer.h"/>

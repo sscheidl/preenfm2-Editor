@@ -31,7 +31,6 @@
 		0CE783A57794CCE00301D7EA /* include_juce_events.mm in Sources */ = {isa = PBXBuildFile; fileRef = 9FA266E3BBE09C86E4948777 /* include_juce_events.mm */; };
 		195C0B5D5A850C461483F264 /* PanelModulation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 33E92A7DA30C094B67A6B201 /* PanelModulation.cpp */; };
 		19AE2A200FF2BDCEE047B0C2 /* include_juce_audio_plugin_client_AU_1.mm in Sources */ = {isa = PBXBuildFile; fileRef = DBF504230B6E8BD6D977B4AB /* include_juce_audio_plugin_client_AU_1.mm */; };
-		1CF5ACB8322777A97A83C8E4 /* AlgoPNG.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 37F551A1042E654F8FC49A25 /* AlgoPNG.cpp */; };
 		20DC61A4FE686CCCB3739FCB /* EnveloppeAbstract.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1EF562403C83C0EC2F6F462B /* EnveloppeAbstract.cpp */; };
 		2444A205DED65CE93F014F63 /* AVKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 54030024D9AF441BAD72E3DB /* AVKit.framework */; };
 		25998F0720B1980F00DA280D /* RecentFilesMenuTemplate.nib in Resources */ = {isa = PBXBuildFile; fileRef = 4898134F4616CEB1ED70D70F /* RecentFilesMenuTemplate.nib */; };
@@ -143,7 +142,6 @@
 		33E92A7DA30C094B67A6B201 /* PanelModulation.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PanelModulation.cpp; path = ../../Source/UI/PanelModulation.cpp; sourceTree = SOURCE_ROOT; };
 		34F0279DB85875160BB7BA8F /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		35190AC3ED815DF3673F1D73 /* EnveloppeAbstract.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = EnveloppeAbstract.h; path = ../../Source/UI/EnveloppeAbstract.h; sourceTree = SOURCE_ROOT; };
-		37F551A1042E654F8FC49A25 /* AlgoPNG.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = AlgoPNG.cpp; path = ../../Source/UI/png/AlgoPNG.cpp; sourceTree = SOURCE_ROOT; };
 		3BA7B518A68C6C096EB932CC /* include_juce_audio_basics.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_basics.mm; path = ../../JuceLibraryCode/include_juce_audio_basics.mm; sourceTree = SOURCE_ROOT; };
 		3EFA8C66080B2C253BC8F966 /* include_juce_graphics.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_graphics.mm; path = ../../JuceLibraryCode/include_juce_graphics.mm; sourceTree = SOURCE_ROOT; };
 		43F86F12D6E270DABAB00A82 /* MainTabs.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = MainTabs.cpp; path = ../../Source/UI/MainTabs.cpp; sourceTree = SOURCE_ROOT; };
@@ -159,7 +157,6 @@
 		53C169A7B6554A6AE3EEE1EE /* MidifiedFloatParameter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MidifiedFloatParameter.h; path = ../../Source/MidifiedFloatParameter.h; sourceTree = SOURCE_ROOT; };
 		54030024D9AF441BAD72E3DB /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = System/Library/Frameworks/AVKit.framework; sourceTree = SDKROOT; };
 		54AD1B9522221DBF06B976E3 /* juce_audio_processors */ = {isa = PBXFileReference; lastKnownFileType = text; name = juce_audio_processors; path = ../../JuceLibraryCode/modules/juce_audio_processors; sourceTree = SOURCE_ROOT; };
-		567A4B9B301C04769A7A931E /* AlgoPNG.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = AlgoPNG.h; path = ../../Source/UI/png/AlgoPNG.h; sourceTree = SOURCE_ROOT; };
 		56A710D72CEDCD37B4E0B8E2 /* JuceHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = JuceHeader.h; path = ../../JuceLibraryCode/JuceHeader.h; sourceTree = SOURCE_ROOT; };
 		584424F6B9FA3EA3DDE0586B /* EnveloppeFree1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = EnveloppeFree1.h; path = ../../Source/UI/EnveloppeFree1.h; sourceTree = SOURCE_ROOT; };
 		5B3E854725B532BF27F161D1 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
@@ -411,8 +408,6 @@
 		CC9061702C034461BFF0FFDC /* png */ = {
 			isa = PBXGroup;
 			children = (
-				37F551A1042E654F8FC49A25 /* AlgoPNG.cpp */,
-				567A4B9B301C04769A7A931E /* AlgoPNG.h */,
 			);
 			name = png;
 			sourceTree = "<group>";
@@ -651,7 +646,6 @@
 				069B772001BB60453C2ED124 /* PanelArpAndFilter.cpp in Sources */,
 				55845BAC02E8E5E30A67571D /* PanelEngine.cpp in Sources */,
 				195C0B5D5A850C461483F264 /* PanelModulation.cpp in Sources */,
-				1CF5ACB8322777A97A83C8E4 /* AlgoPNG.cpp in Sources */,
 				A57DBA666E9A6F8A591A76BC /* PreenLookAndFeel.cpp in Sources */,
 				CBF34257AA7051A51CD5428A /* StepSequencer.cpp in Sources */,
 				268061BE83E361E942525055 /* MidifiedFloatParameter.cpp in Sources */,

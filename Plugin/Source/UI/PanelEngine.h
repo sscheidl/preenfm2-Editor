@@ -46,7 +46,7 @@
 #define NUMBER_OF_OPERATORS 6
 #define NUMBER_OF_IM 6
 #define NUMBER_OF_MIX 6
-#define NUMBER_OF_ALGO 28
+#define NUMBER_OF_ALGO 32
 
 //[/Headers]
 
@@ -100,49 +100,48 @@ public:
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
-	ScopedPointer<Enveloppe> enveloppe[NUMBER_OF_OPERATORS];
-	ScopedPointer<TextButton> envCopyButton, envPasteButton;
+	std::unique_ptr<Enveloppe> enveloppe[NUMBER_OF_OPERATORS];
+	std::unique_ptr<TextButton> envCopyButton, envPasteButton;
 	int envToCopy, envSelected;
-	ScopedPointer<TextButton> enveloppeButton[NUMBER_OF_OPERATORS];
-	ScopedPointer<Slider> mixKnob[NUMBER_OF_MIX];
-	ScopedPointer<Slider> panKnob[NUMBER_OF_MIX];
-	ScopedPointer<Label> mixLabel[NUMBER_OF_MIX];
-	ScopedPointer<Label> IMLabel;
-	ScopedPointer<Label> IMVelocityLabel;
-	ScopedPointer<Label> IMNumber[NUMBER_OF_IM];
-	ScopedPointer<Slider> IMKnob[NUMBER_OF_IM];
-	ScopedPointer<Slider> IMVelocityKnob[NUMBER_OF_IM];
-	ScopedPointer<Label> algoChooserLabel;
-	ScopedPointer<Slider> algoChooser;
-	ScopedPointer<DrawableImage> algoDrawableImage;
-	Image algoImages[NUMBER_OF_ALGO];
-	ScopedPointer<Label> velocityLabel;
-	ScopedPointer<Slider> velocity;
-	ScopedPointer<Label> voicesLabel;
-	ScopedPointer<Slider> voices;
-	ScopedPointer<ComboBox> playModePfm3;
-	ScopedPointer<ComboBox> playModePfm2;
-	ScopedPointer<Label> glideLabel;
-	ScopedPointer<Slider> glide;
-	ScopedPointer<Label> glideTypeLabel;
-	ScopedPointer<ComboBox> glideType;
+	std::unique_ptr<TextButton> enveloppeButton[NUMBER_OF_OPERATORS];
+	std::unique_ptr<Slider> mixKnob[NUMBER_OF_MIX];
+	std::unique_ptr<Slider> panKnob[NUMBER_OF_MIX];
+	std::unique_ptr<Label> mixLabel[NUMBER_OF_MIX];
+	std::unique_ptr<Label> IMLabel;
+	std::unique_ptr<Label> IMVelocityLabel;
+	std::unique_ptr<Label> IMNumber[NUMBER_OF_IM];
+	std::unique_ptr<Slider> IMKnob[NUMBER_OF_IM];
+	std::unique_ptr<Slider> IMVelocityKnob[NUMBER_OF_IM];
+	std::unique_ptr<Label> algoChooserLabel;
+	std::unique_ptr<Slider> algoChooser;
+	std::unique_ptr<Component> algoDrawableImage;
+	std::unique_ptr<Label> velocityLabel;
+	std::unique_ptr<Slider> velocity;
+	std::unique_ptr<Label> voicesLabel;
+	std::unique_ptr<Slider> voices;
+	std::unique_ptr<ComboBox> playModePfm3;
+	std::unique_ptr<ComboBox> playModePfm2;
+	std::unique_ptr<Label> glideLabel;
+	std::unique_ptr<Slider> glide;
+	std::unique_ptr<Label> glideTypeLabel;
+	std::unique_ptr<ComboBox> glideType;
 
-	ScopedPointer<Label> unisonSpreadLabel;
-	ScopedPointer<Slider> unisonSpread;
-	ScopedPointer<Label> unisonDetuneLabel;
-	ScopedPointer<Slider> unisonDetune;
+	std::unique_ptr<Label> unisonSpreadLabel;
+	std::unique_ptr<Slider> unisonSpread;
+	std::unique_ptr<Label> unisonDetuneLabel;
+	std::unique_ptr<Slider> unisonDetune;
 
-	ScopedPointer<Label> opShapeLabel;
-	ScopedPointer<ComboBox> opShape[NUMBER_OF_OPERATORS];
+	std::unique_ptr<Label> opShapeLabel;
+	std::unique_ptr<ComboBox> opShape[NUMBER_OF_OPERATORS];
 
-	ScopedPointer<Label> opFrequencyTypeLabel;
-	ScopedPointer<ComboBox> opFrequencyType[NUMBER_OF_OPERATORS];
+	std::unique_ptr<Label> opFrequencyTypeLabel;
+	std::unique_ptr<ComboBox> opFrequencyType[NUMBER_OF_OPERATORS];
 
-	ScopedPointer<Label> opFrequencyLabel;
-	ScopedPointer<Slider> opFrequency[NUMBER_OF_OPERATORS];
+	std::unique_ptr<Label> opFrequencyLabel;
+	std::unique_ptr<Slider> opFrequency[NUMBER_OF_OPERATORS];
 
-	ScopedPointer<Label> opFrequencyFineTuneLabel;
-	ScopedPointer<Slider> opFrequencyFineTune[NUMBER_OF_OPERATORS];
+	std::unique_ptr<Label> opFrequencyFineTuneLabel;
+	std::unique_ptr<Slider> opFrequencyFineTune[NUMBER_OF_OPERATORS];
 
 	MidiBuffer* eventsToAdd;
     //[/UserVariables]

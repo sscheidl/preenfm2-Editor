@@ -37,7 +37,7 @@ public:
 	void paint(Graphics&);
 	// override
 	// Must be implemented to deal with point value modification
-	void newYValue(int draggingPointIndex, float newY);
+	void newYValue(int pointIndex, float newY);
 	const char ** getPointSuffix() const;
 	const char *getPointSuffix(int pointNumber, bool isX) const;
 

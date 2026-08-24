@@ -18,28 +18,125 @@
 
 #include "PreenLookAndFeel.h"
 
+namespace
+{
+const Colour background(0xff0b1117);
+const Colour surface(0xff111a24);
+const Colour surfaceRaised(0xff182532);
+const Colour outline(0xff314353);
+const Colour textPrimary(0xffedf4f7);
+const Colour textMuted(0xff9db0bd);
+const Colour accent(0xff35c2c8);
+const Colour accentBright(0xff5edbe0);
+}
 
 preenfmLookAndFeel::preenfmLookAndFeel() : LookAndFeel_V4() {
-	//windowBackground = 0,
-	//	widgetBackground,
-	//	menuBackground,
-	//	outline,
-	//	defaultText,
-	//	defaultFill,
-	//	highlightedText,
-	//	highlightedFill,
-	//	menuText,
 	setUsingNativeAlertWindows(false);
 	setColourScheme(
-	{ 0xff505050, 0xff303030, 0xff202020,
-		0xffa6a6a6, 0xffffffff,
-		0xff000000, 0xff000000,
-		0xffffffff, 0xffffffff }
-	//{ 0xff505050, 0xff424242, 0xff606060,
-	//	0xffa6a6a6, 0xffffffff,
-	//	0xff21ba90, 0xff000000,
-	//	0xffffffff, 0xffffffff }
-	);
+		{ background, surface, surfaceRaised, outline, textPrimary,
+			accent, textPrimary, accent, textPrimary });
+
+	setColour(Label::textColourId, textPrimary);
+	setColour(TextButton::buttonColourId, surfaceRaised);
+	setColour(TextButton::buttonOnColourId, accent.darker(0.25f));
+	setColour(TextButton::textColourOffId, textPrimary);
+	setColour(TextButton::textColourOnId, Colours::white);
+	setColour(ComboBox::backgroundColourId, surfaceRaised);
+	setColour(ComboBox::textColourId, textPrimary);
+	setColour(ComboBox::outlineColourId, outline);
+	setColour(ComboBox::arrowColourId, accentBright);
+	setColour(Slider::textBoxTextColourId, textPrimary);
+	setColour(Slider::textBoxBackgroundColourId, surface);
+	setColour(Slider::textBoxOutlineColourId, Colours::transparentBlack);
+	setColour(GroupComponent::outlineColourId, outline);
+	setColour(GroupComponent::textColourId, textMuted);
+	setColour(TabbedComponent::backgroundColourId, background);
+	setColour(TabbedComponent::outlineColourId, Colours::transparentBlack);
+	setColour(TabbedButtonBar::tabTextColourId, textMuted);
+	setColour(TabbedButtonBar::frontTextColourId, textPrimary);
+	setColour(PopupMenu::backgroundColourId, surfaceRaised);
+	setColour(PopupMenu::textColourId, textPrimary);
+	setColour(PopupMenu::highlightedBackgroundColourId, accent.darker(0.35f));
+	setColour(PopupMenu::highlightedTextColourId, Colours::white);
+	setColour(HyperlinkButton::textColourId, accentBright);
+}
+
+Font preenfmLookAndFeel::getTextButtonFont(TextButton&, int buttonHeight)
+{
+	return Font(FontOptions(jmin(15.0f, buttonHeight * 0.58f), Font::plain)
+		.withMetricsKind(TypefaceMetricsKind::legacy));
+}
+
+int preenfmLookAndFeel::getTabButtonBestWidth(TabBarButton& button, int tabDepth)
+{
+	return LookAndFeel_V4::getTabButtonBestWidth(button, tabDepth) + 18;
+}
+
+void preenfmLookAndFeel::drawButtonBackground(Graphics& g, Button& button,
+	const Colour& backgroundColour, bool isHighlighted, bool isDown)
+{
+	auto bounds = button.getLocalBounds().toFloat().reduced(0.75f);
+	auto fill = backgroundColour.isTransparent() ? surfaceRaised : backgroundColour;
+
+	if (button.getToggleState())
+		fill = accent.darker(0.35f);
+	if (isDown)
+		fill = fill.darker(0.18f);
+	else if (isHighlighted)
+		fill = fill.brighter(0.10f);
+
+	g.setColour(fill.withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.45f));
+	g.fillRoundedRectangle(bounds, 5.0f);
+	g.setColour((button.getToggleState() ? accentBright : outline)
+		.withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.4f));
+	g.drawRoundedRectangle(bounds, 5.0f, button.getToggleState() ? 1.5f : 1.0f);
+}
+
+void preenfmLookAndFeel::drawGroupComponentOutline(Graphics& g, int width, int height,
+	const String& label, const Justification&, GroupComponent& group)
+{
+	const auto bounds = Rectangle<float>(0.5f, 8.0f,
+		static_cast<float>(width) - 1.0f, static_cast<float>(height) - 8.5f);
+	const auto border = group.findColour(GroupComponent::outlineColourId);
+	g.setColour(surface.interpolatedWith(border, 0.11f));
+	g.fillRoundedRectangle(bounds, 8.0f);
+	g.setColour(border);
+	g.drawRoundedRectangle(bounds, 8.0f, 1.0f);
+
+	if (label.isNotEmpty())
+	{
+		g.setFont(Font(FontOptions(13.0f, Font::bold)
+			.withMetricsKind(TypefaceMetricsKind::legacy)));
+		const auto textWidth = jmin(width - 24,
+			GlyphArrangement::getStringWidthInt(g.getCurrentFont(), label) + 14);
+		g.setColour(background);
+		g.fillRect(10, 0, textWidth, 18);
+		g.setColour(group.findColour(GroupComponent::textColourId));
+		g.drawText(label, 16, 0, textWidth - 8, 18, Justification::centredLeft, true);
+	}
+}
+
+void preenfmLookAndFeel::drawTabButton(TabBarButton& button, Graphics& g,
+	bool isMouseOver, bool isMouseDown)
+{
+	static const Colour tabColours[] = {
+		Colour(0xff17323a), Colour(0xff202b46), Colour(0xff29303b)
+	};
+	auto bounds = button.getLocalBounds().toFloat().reduced(5.0f, 4.0f);
+	auto fill = tabColours[jlimit(0, 2, button.getIndex())];
+	if (button.isFrontTab())
+		fill = fill.brighter(0.16f);
+	if (isMouseDown)
+		fill = fill.darker(0.15f);
+	else if (isMouseOver)
+		fill = fill.brighter(0.08f);
+
+	g.setColour(fill);
+	g.fillRoundedRectangle(bounds, 6.0f);
+	g.setColour((button.isFrontTab() ? accentBright : outline).withAlpha(0.9f));
+	g.drawRoundedRectangle(bounds, 6.0f, button.isFrontTab() ? 1.4f : 1.0f);
+
+	drawTabButtonText(button, g, isMouseOver, isMouseDown);
 }
 
 
@@ -47,8 +144,8 @@ preenfmLookAndFeel::preenfmLookAndFeel() : LookAndFeel_V4() {
 void preenfmLookAndFeel::drawRotarySlider(Graphics& g, int x, int y, int width, int height, float sliderPos,
 	const float rotaryStartAngle, const float rotaryEndAngle, Slider& slider)
 {
-	const auto outline = Colours::grey;
-	const auto fill = Colours::lightblue;
+	const auto track = outline;
+	const auto fill = slider.isEnabled() ? accentBright : textMuted.withAlpha(0.45f);
 
 	const auto bounds = Rectangle<int>(x, y, width, height).toFloat().reduced(5);
 
@@ -67,7 +164,7 @@ void preenfmLookAndFeel::drawRotarySlider(Graphics& g, int x, int y, int width, 
 		rotaryEndAngle,
 		true);
 
-	g.setColour(outline);
+	g.setColour(track);
 	g.strokePath(backgroundArc, PathStrokeType(lineW, PathStrokeType::curved, PathStrokeType::butt));
 
 	if (slider.isEnabled())
@@ -88,8 +185,10 @@ void preenfmLookAndFeel::drawRotarySlider(Graphics& g, int x, int y, int width, 
         const juce::Point<float> thumbPoint(bounds.getCentreX() + arcRadius * std::cos(toAngle - float_Pi * 0.5f),
 			bounds.getCentreY() + arcRadius * std::sin(toAngle - float_Pi * 0.5f));
 
+		g.setColour(surfaceRaised);
+		g.fillEllipse(bounds.withSizeKeepingCentre(radius * 1.18f, radius * 1.18f));
 		g.setColour(fill);
-		g.drawLine(bounds.getCentreX(), bounds.getCentreY(), thumbPoint.getX(), thumbPoint.getY());
+		g.drawLine(bounds.getCentreX(), bounds.getCentreY(), thumbPoint.getX(), thumbPoint.getY(), 2.0f);
 	}
 }
 
@@ -100,9 +199,10 @@ void preenfmLookAndFeel::drawLinearSlider(Graphics& g, int x, int y, int width, 
 	float maxSliderPos,
 	const Slider::SliderStyle style, Slider& slider)
 {
+	ignoreUnused(minSliderPos, maxSliderPos, style);
 
-	const auto outline = Colours::grey;
-	const auto fill = Colours::lightblue;
+	const auto track = outline;
+	const auto fill = slider.isEnabled() ? accentBright : textMuted.withAlpha(0.45f);
 
 
 	const auto trackWidth = jmin(4.0f, slider.isHorizontal() ? height * 0.25f : width * 0.25f);
@@ -117,20 +217,23 @@ void preenfmLookAndFeel::drawLinearSlider(Graphics& g, int x, int y, int width, 
 	backgroundTrack.startNewSubPath(startPoint);
 	backgroundTrack.lineTo(endPoint);
 
-	g.setColour(outline);
+	g.setColour(track);
 	g.strokePath(backgroundTrack, PathStrokeType(trackWidth, PathStrokeType::curved, PathStrokeType::butt));
 
 	Path valueTrack;
-	juce::Point<float> minPoint, maxPoint;
-	juce::Point<float> midPoint = (endPoint + startPoint) / 2;
 
 	const auto kx = slider.isHorizontal() ? sliderPos : (x + width * 0.5f);
 	const auto ky = slider.isHorizontal() ? (y + height * 0.5f) : sliderPos;
+	const juce::Point<float> maxPoint { kx, ky };
+	juce::Point<float> valueOrigin = startPoint;
 
-	minPoint = startPoint;
-	maxPoint = { kx, ky };
+	if (slider.getMinimum() < 0.0 && slider.getMaximum() > 0.0) {
+		const float zeroProportion = static_cast<float>(
+			slider.valueToProportionOfLength(0.0));
+		valueOrigin = startPoint + (endPoint - startPoint) * zeroProportion;
+	}
 
-	valueTrack.startNewSubPath(midPoint);
+	valueTrack.startNewSubPath(valueOrigin);
 	valueTrack.lineTo(maxPoint);
 
 	float knobWidth = trackWidth;
@@ -145,21 +248,22 @@ void preenfmLookAndFeel::drawLinearSlider(Graphics& g, int x, int y, int width, 
 
 	g.setColour(fill);
 	g.strokePath(valueTrack, PathStrokeType(trackWidth, PathStrokeType::curved, PathStrokeType::butt));
-	g.fillRect(Rectangle<float>(knobWidth, knobHeight).withCentre(maxPoint));
+	g.fillRoundedRectangle(Rectangle<float>(knobWidth, knobHeight).withCentre(maxPoint), 2.0f);
 }
 
 
 void preenfmLookAndFeel::drawComboBox(Graphics& g, int width, int height, bool,
 	int, int, int, int, ComboBox& box)
 {
-	const auto cornerSize = box.findParentComponentOfClass<ChoicePropertyComponent>() != nullptr ? 0.0f : 3.0f;
+	const auto cornerSize = box.findParentComponentOfClass<ChoicePropertyComponent>() != nullptr ? 0.0f : 5.0f;
 	const Rectangle<int> boxBounds(0, 0, width, height);
 
 	g.setColour(box.findColour(ComboBox::backgroundColourId));
 	g.fillRoundedRectangle(boxBounds.toFloat(), cornerSize);
 
 	g.setColour(box.findColour(ComboBox::outlineColourId));
-	g.drawRoundedRectangle(boxBounds.toFloat().reduced(0.5f, 0.5f), cornerSize, 1.0f);
+	g.drawRoundedRectangle(boxBounds.toFloat().reduced(0.5f, 0.5f), cornerSize,
+		box.hasKeyboardFocus(true) ? 1.5f : 1.0f);
 
 	Rectangle<int> arrowZone(width - 18, 0, 15, height);
 	Path path;
@@ -174,7 +278,8 @@ void preenfmLookAndFeel::drawComboBox(Graphics& g, int width, int height, bool,
 
 Font preenfmLookAndFeel::getComboBoxFont(ComboBox& box)
 {
-	return Font(jmin(14.0f, box.getHeight() * 0.85f));
+	return Font(FontOptions(jmin(14.0f, box.getHeight() * 0.85f))
+		.withMetricsKind(TypefaceMetricsKind::legacy));
 }
 
 

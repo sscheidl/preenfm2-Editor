@@ -316,4 +316,74 @@ enum {
 	PREENFM_NRPN_PFMTYPE = 2044
 };
 
+
+//==============================================================================
+// PreenFM2 editor remote protocol, version 1 (firmware 3.00 alpha).
+//
+// Mirrors src/midi/MidiDecoder.h of the firmware. Every command lives on a
+// single NRPN page selected by the NRPN parameter MSB, so the resulting
+// parameter numbers are 512..639. That range collides with nothing: pages 0/1
+// are synth parameters and the preset name letters, pages 2/3 the step
+// sequencers and 127/127 the full dump request. Older firmwares fall through
+// decodeNrpn() without any side effect, which is what makes capability
+// detection possible at all.
+//
+// All wire values are zero based. The user interface stays one based.
+//==============================================================================
+
+// NRPN parameter MSB that selects the editor page.
+#define PREENFM_EDITOR_NRPN_PAGE 4
+
+// First and last NRPN parameter number belonging to the editor page.
+#define PREENFM_EDITOR_NRPN_FIRST (PREENFM_EDITOR_NRPN_PAGE << 7)
+#define PREENFM_EDITOR_NRPN_LAST  (PREENFM_EDITOR_NRPN_FIRST + 127)
+
+// Editor to firmware. The value of a query is ignored, send 0.
+enum PreenfmEditorRequest {
+	PREENFM_EDITOR_REQ_CAPABILITY = 0,
+	PREENFM_EDITOR_REQ_POSITION = 1,
+	PREENFM_EDITOR_REQ_STORE = 2
+};
+
+// Firmware to editor. The response range is disjoint from the request range,
+// so a reply looped back by MIDI thru can never be decoded as a request.
+enum PreenfmEditorResponse {
+	PREENFM_EDITOR_RSP_PROTOCOL_VERSION = 64,
+	PREENFM_EDITOR_RSP_CAPABILITIES = 65,
+	PREENFM_EDITOR_RSP_POSITION_BANKTYPE = 66,
+	PREENFM_EDITOR_RSP_POSITION_BANK = 67,
+	PREENFM_EDITOR_RSP_POSITION_PRESET = 68,
+	PREENFM_EDITOR_RSP_POSITION_VALID = 69,
+	PREENFM_EDITOR_RSP_STORE_STATUS = 70,
+	PREENFM_EDITOR_RSP_STORE_TARGET = 71
+};
+
+// Store status, response LSB 70. On every non-zero status nothing is written
+// and the remembered hardware position is left untouched.
+enum PreenfmEditorStatus {
+	PREENFM_EDITOR_STATUS_OK = 0,
+	PREENFM_EDITOR_STATUS_BANK_NOT_FOUND = 1,
+	PREENFM_EDITOR_STATUS_INVALID_TARGET = 2,
+	PREENFM_EDITOR_STATUS_AMBIGUOUS_CHANNEL = 3,
+	PREENFM_EDITOR_STATUS_STORAGE_ERROR = 4,
+	PREENFM_EDITOR_STATUS_PROTOCOL_ERROR = 5
+};
+
+// The only protocol version this editor understands.
+#define PREENFM_EDITOR_PROTOCOL_VERSION 1
+
+// Capability bits, response LSB 65.
+#define PREENFM_EDITOR_CAPABILITY_STORE 0x01
+#define PREENFM_EDITOR_CAPABILITY_POSITION_QUERY 0x02
+
+// Bank type 0 is the regular PreenFM patch bank. Combo and DX7 banks are not
+// reachable through this protocol and are never a valid store target.
+#define PREENFM_EDITOR_BANKTYPE_PATCH 0
+
+// Firmware NUMBEROFPREENFMBANKS. Banks 64..127 can never exist, so the
+// firmware answers status 2 for them. This is the addressable bank count and
+// not the theoretical width of CC32.
+#define PREENFM_EDITOR_BANK_COUNT 64
+#define PREENFM_EDITOR_PRESET_COUNT 128
+
 #endif  // PREENNRPN_H_INCLUDED

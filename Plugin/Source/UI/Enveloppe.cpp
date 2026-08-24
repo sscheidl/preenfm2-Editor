@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../JuceLibraryCode/JuceHeader.h"
+#include "JuceHeader.h"
 #include "Enveloppe.h"
 
 
@@ -44,9 +44,9 @@ Enveloppe::Enveloppe()
 	pointList.append(point3);
 	pointList.append(point4);
 
-	loop = new ToggleButton("Loop");
+	loop = std::make_unique<ToggleButton>("Loop");
 	loop->setTooltip("Sets release values to make the enveloppe loops");
-	addAndMakeVisible(loop);
+	addAndMakeVisible(loop.get());
 	loop->addListener(this);
 
 	// Not define
@@ -88,15 +88,17 @@ void Enveloppe::paint(Graphics& g)
 
 }
 
-void Enveloppe::newXValue(int draggingPointIndex, float newX) {
-	if (draggingPointIndex == 4) {
-		loop->setToggleState(getX(4) == 0.0f && getY(4) == 1.0f, false);
+void Enveloppe::newXValue(int pointIndex, float) {
+	if (pointIndex == 4) {
+		loop->setToggleState(getX(4) == 0.0f && getY(4) == 1.0f,
+			dontSendNotification);
 	}
 }
 
-void Enveloppe::newYValue(int draggingPointIndex, float newY) {
-	if (draggingPointIndex == 4) {
-		loop->setToggleState(getX(4) == 0.0f && getY(4) == 1.0f, false);
+void Enveloppe::newYValue(int pointIndex, float) {
+	if (pointIndex == 4) {
+		loop->setToggleState(getX(4) == 0.0f && getY(4) == 1.0f,
+			dontSendNotification);
 	}
 }
 
@@ -118,7 +120,7 @@ void Enveloppe::resized() {
 
 
 void Enveloppe::buttonClicked(Button* buttonThatWasClicked) {
-	if (buttonThatWasClicked == loop) {
+	if (buttonThatWasClicked == loop.get()) {
 		if (loop->getToggleState()) {
 			releaseTimeBeforeLoop = getX(4);
 			releaseLevelBeforeLoop = getY(4);
@@ -134,9 +136,9 @@ void Enveloppe::buttonClicked(Button* buttonThatWasClicked) {
 	}
 }
 
-void Enveloppe::setOperatorType(int operatorType) {
-	if (this->operatorType != operatorType) {
-		this->operatorType = operatorType;
+void Enveloppe::setOperatorType(int newOperatorType) {
+	if (operatorType != newOperatorType) {
+		operatorType = newOperatorType;
 		loop->setVisible(this->operatorType == 2);
 		repaint();
 	}

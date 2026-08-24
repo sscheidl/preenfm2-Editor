@@ -119,8 +119,8 @@ PanelArpAndFilter::PanelArpAndFilter ()
                                                  TRANS("Arpeggiator")));
     addAndMakeVisible (arpGroupComponent.get());
     arpGroupComponent->setTextLabelPosition (Justification::centredLeft);
-    arpGroupComponent->setColour (GroupComponent::outlineColourId, Colours::cadetblue);
-    arpGroupComponent->setColour (GroupComponent::textColourId, Colours::cadetblue);
+    arpGroupComponent->setColour (GroupComponent::outlineColourId, Colour (0xff526a7c));
+    arpGroupComponent->setColour (GroupComponent::textColourId, Colour (0xff86a0b3));
 
     arpBPM.reset (new Slider ("Arp bpm"));
     addAndMakeVisible (arpBPM.get());
@@ -132,7 +132,9 @@ PanelArpAndFilter::PanelArpAndFilter ()
     arpBPMLabel.reset (new Label ("arp bpm label",
                                   TRANS("BPM")));
     addAndMakeVisible (arpBPMLabel.get());
-    arpBPMLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
+    arpBPMLabel->setFont (Font (FontOptions (15.00f, Font::plain)
+                                  .withMetricsKind (TypefaceMetricsKind::legacy))
+                                  .withTypefaceStyle ("Regular"));
     arpBPMLabel->setJustificationType (Justification::centredTop);
     arpBPMLabel->setEditable (false, false, false);
     arpBPMLabel->setColour (TextEditor::textColourId, Colours::black);
@@ -141,7 +143,9 @@ PanelArpAndFilter::PanelArpAndFilter ()
     arpDirectionLabel.reset (new Label ("arp direction label",
                                         TRANS("Direction")));
     addAndMakeVisible (arpDirectionLabel.get());
-    arpDirectionLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
+    arpDirectionLabel->setFont (Font (FontOptions (15.00f, Font::plain)
+                                        .withMetricsKind (TypefaceMetricsKind::legacy))
+                                        .withTypefaceStyle ("Regular"));
     arpDirectionLabel->setJustificationType (Justification::centredTop);
     arpDirectionLabel->setEditable (false, false, false);
     arpDirectionLabel->setColour (TextEditor::textColourId, Colours::black);
@@ -150,7 +154,9 @@ PanelArpAndFilter::PanelArpAndFilter ()
     arpOctaveLabel.reset (new Label ("arp octave label",
                                      TRANS("Octave")));
     addAndMakeVisible (arpOctaveLabel.get());
-    arpOctaveLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
+    arpOctaveLabel->setFont (Font (FontOptions (15.00f, Font::plain)
+                                     .withMetricsKind (TypefaceMetricsKind::legacy))
+                                     .withTypefaceStyle ("Regular"));
     arpOctaveLabel->setJustificationType (Justification::centredTop);
     arpOctaveLabel->setEditable (false, false, false);
     arpOctaveLabel->setColour (TextEditor::textColourId, Colours::black);
@@ -159,7 +165,9 @@ PanelArpAndFilter::PanelArpAndFilter ()
     arpPatternLabel.reset (new Label ("arp pattern label",
                                       TRANS("Pattern")));
     addAndMakeVisible (arpPatternLabel.get());
-    arpPatternLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
+    arpPatternLabel->setFont (Font (FontOptions (15.00f, Font::plain)
+                                      .withMetricsKind (TypefaceMetricsKind::legacy))
+                                      .withTypefaceStyle ("Regular"));
     arpPatternLabel->setJustificationType (Justification::centredTop);
     arpPatternLabel->setEditable (false, false, false);
     arpPatternLabel->setColour (TextEditor::textColourId, Colours::black);
@@ -168,7 +176,9 @@ PanelArpAndFilter::PanelArpAndFilter ()
     arpDivisionLabel.reset (new Label ("arp division label",
                                        TRANS("Division")));
     addAndMakeVisible (arpDivisionLabel.get());
-    arpDivisionLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
+    arpDivisionLabel->setFont (Font (FontOptions (15.00f, Font::plain)
+                                       .withMetricsKind (TypefaceMetricsKind::legacy))
+                                       .withTypefaceStyle ("Regular"));
     arpDivisionLabel->setJustificationType (Justification::centredTop);
     arpDivisionLabel->setEditable (false, false, false);
     arpDivisionLabel->setColour (TextEditor::textColourId, Colours::black);
@@ -177,7 +187,9 @@ PanelArpAndFilter::PanelArpAndFilter ()
     arpDurationLabel.reset (new Label ("arp Duration label",
                                        TRANS("Duration")));
     addAndMakeVisible (arpDurationLabel.get());
-    arpDurationLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
+    arpDurationLabel->setFont (Font (FontOptions (15.00f, Font::plain)
+                                       .withMetricsKind (TypefaceMetricsKind::legacy))
+                                       .withTypefaceStyle ("Regular"));
     arpDurationLabel->setJustificationType (Justification::centredTop);
     arpDurationLabel->setEditable (false, false, false);
     arpDurationLabel->setColour (TextEditor::textColourId, Colours::black);
@@ -186,7 +198,9 @@ PanelArpAndFilter::PanelArpAndFilter ()
     arpLatchLabel.reset (new Label ("arp Latch label",
                                     TRANS("Latch")));
     addAndMakeVisible (arpLatchLabel.get());
-    arpLatchLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
+    arpLatchLabel->setFont (Font (FontOptions (15.00f, Font::plain)
+                                    .withMetricsKind (TypefaceMetricsKind::legacy))
+                                    .withTypefaceStyle ("Regular"));
     arpLatchLabel->setJustificationType (Justification::centredTop);
     arpLatchLabel->setEditable (false, false, false);
     arpLatchLabel->setColour (TextEditor::textColourId, Colours::black);
@@ -319,13 +333,15 @@ PanelArpAndFilter::PanelArpAndFilter ()
                                                     TRANS("Filter")));
     addAndMakeVisible (filterGroupComponent.get());
     filterGroupComponent->setTextLabelPosition (Justification::centredLeft);
-    filterGroupComponent->setColour (GroupComponent::outlineColourId, Colour (0x00749fad));
-    filterGroupComponent->setColour (GroupComponent::textColourId, Colours::beige);
+    filterGroupComponent->setColour (GroupComponent::outlineColourId, Colour (0xff35aeb4));
+    filterGroupComponent->setColour (GroupComponent::textColourId, Colour (0xff69cdd1));
 
     filterParam1Label.reset (new Label ("filter param1 label",
                                         TRANS("Param1")));
     addAndMakeVisible (filterParam1Label.get());
-    filterParam1Label->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
+    filterParam1Label->setFont (Font (FontOptions (15.00f, Font::plain)
+                                        .withMetricsKind (TypefaceMetricsKind::legacy))
+                                        .withTypefaceStyle ("Regular"));
     filterParam1Label->setJustificationType (Justification::centredTop);
     filterParam1Label->setEditable (false, false, false);
     filterParam1Label->setColour (TextEditor::textColourId, Colours::black);
@@ -341,7 +357,9 @@ PanelArpAndFilter::PanelArpAndFilter ()
     filterParam2Label.reset (new Label ("filter param2 label",
                                         TRANS("Param2")));
     addAndMakeVisible (filterParam2Label.get());
-    filterParam2Label->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
+    filterParam2Label->setFont (Font (FontOptions (15.00f, Font::plain)
+                                        .withMetricsKind (TypefaceMetricsKind::legacy))
+                                        .withTypefaceStyle ("Regular"));
     filterParam2Label->setJustificationType (Justification::centredTop);
     filterParam2Label->setEditable (false, false, false);
     filterParam2Label->setColour (TextEditor::textColourId, Colours::black);
@@ -357,7 +375,9 @@ PanelArpAndFilter::PanelArpAndFilter ()
     filterGainLabel.reset (new Label ("filter gain label",
                                       TRANS("Gain")));
     addAndMakeVisible (filterGainLabel.get());
-    filterGainLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
+    filterGainLabel->setFont (Font (FontOptions (15.00f, Font::plain)
+                                      .withMetricsKind (TypefaceMetricsKind::legacy))
+                                      .withTypefaceStyle ("Regular"));
     filterGainLabel->setJustificationType (Justification::centredTop);
     filterGainLabel->setEditable (false, false, false);
     filterGainLabel->setColour (TextEditor::textColourId, Colours::black);
@@ -385,7 +405,9 @@ PanelArpAndFilter::PanelArpAndFilter ()
     clockLabel.reset (new Label ("clock label",
                                  TRANS("Clock:\n")));
     addAndMakeVisible (clockLabel.get());
-    clockLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
+    clockLabel->setFont (Font (FontOptions (15.00f, Font::plain)
+                                 .withMetricsKind (TypefaceMetricsKind::legacy))
+                                 .withTypefaceStyle ("Regular"));
     clockLabel->setJustificationType (Justification::centredLeft);
     clockLabel->setEditable (false, false, false);
     clockLabel->setColour (TextEditor::textColourId, Colours::black);
@@ -407,14 +429,16 @@ PanelArpAndFilter::PanelArpAndFilter ()
     }
 
     for (int n = 0; n < 2; n++) {
-        addAndMakeVisible(noteGroupComponent[n] = new GroupComponent("Note group" + String(n + 1), TRANS("Note" + String(n + 1) + " Scaling")));
-        noteGroupComponent[n]->setColour(GroupComponent::textColourId, Colour(0xff749FAD));
-        noteGroupComponent[n]->setColour(GroupComponent::outlineColourId, Colour(0xff749FAD));
+        addAndMakeVisible((noteGroupComponent[n] = std::make_unique<GroupComponent>("Note group" + String(n + 1), TRANS("Note" + String(n + 1) + " Scaling"))).get());
+        const Colour noteColour = n == 0 ? Colour(0xff7383c5) : Colour(0xff8a7654);
+        noteGroupComponent[n]->setColour(GroupComponent::textColourId,
+            n == 0 ? Colour(0xff9da9e0) : Colour(0xffc7ad79));
+        noteGroupComponent[n]->setColour(GroupComponent::outlineColourId, noteColour);
         noteGroupComponent[n]->setTextLabelPosition(Justification::centredLeft);
 
-        addAndMakeVisible(noteBeforeLabel[n] = new Label("Note" + String(n + 1) + " before label ", "Before"));
+        addAndMakeVisible((noteBeforeLabel[n] = std::make_unique<Label>("Note" + String(n + 1) + " before label ", "Before")).get());
         noteBeforeLabel[n]->setJustificationType(Justification::centredTop);
-        addAndMakeVisible(noteBefore[n] = new ComboBox("Note" + String(n + 1) + " before"));
+        addAndMakeVisible((noteBefore[n] = std::make_unique<ComboBox>("Note" + String(n + 1) + " before")).get());
         noteBefore[n]->setEditableText(false);
         noteBefore[n]->setJustificationType(Justification::centred);
         noteBefore[n]->setColour(ComboBox::buttonColourId, Colours::blue);
@@ -429,9 +453,9 @@ PanelArpAndFilter::PanelArpAndFilter ()
         noteBefore[n]->setScrollWheelEnabled(true);
         noteBefore[n]->addListener(this);
 
-        addAndMakeVisible(noteBreakLabel[n] = new Label("Note" + String(n + 1) + " break label ", "Break note"));
+        addAndMakeVisible((noteBreakLabel[n] = std::make_unique<Label>("Note" + String(n + 1) + " break label ", "Break note")).get());
         noteBreakLabel[n]->setJustificationType(Justification::centredTop);
-        addAndMakeVisible(noteBreak[n] = new SliderPfm2("Note" + String(n + 1) + " break"));
+        addAndMakeVisible((noteBreak[n] = std::make_unique<SliderPfm2>("Note" + String(n + 1) + " break")).get());
         noteBreak[n]->setRange(0, 127.0f, 1.0f);
         noteBreak[n]->setSliderStyle(Slider::RotaryVerticalDrag);
         noteBreak[n]->setTextBoxStyle(Slider::TextBoxBelow, false, 35, 16);
@@ -439,9 +463,9 @@ PanelArpAndFilter::PanelArpAndFilter ()
         noteBreak[n]->setValue(60.0f, dontSendNotification);
         noteBreak[n]->addListener(this);
 
-        addAndMakeVisible(noteAfterLabel[n] = new Label("Note" + String(n + 1) + " after label ", "After"));
+        addAndMakeVisible((noteAfterLabel[n] = std::make_unique<Label>("Note" + String(n + 1) + " after label ", "After")).get());
         noteAfterLabel[n]->setJustificationType(Justification::centred);
-        addAndMakeVisible(noteAfter[n] = new ComboBox("Note" + String(n + 1) + " after"));
+        addAndMakeVisible((noteAfter[n] = std::make_unique<ComboBox>("Note" + String(n + 1) + " after")).get());
         noteAfter[n]->setEditableText(false);
         noteAfter[n]->setJustificationType(Justification::left);
         noteAfter[n]->setColour(ComboBox::buttonColourId, Colours::blue);
@@ -535,53 +559,7 @@ void PanelArpAndFilter::paint (Graphics& g)
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    {
-        int x = 2, y = proportionOfHeight (0.2000f), width = getWidth() - 4, height = proportionOfHeight (0.2000f);
-        Colour fillColour1 = Colour (0xff14576c), fillColour2 = Colour (0xff083543);
-        //[UserPaintCustomArguments] Customize the painting arguments here..
-        //[/UserPaintCustomArguments]
-        g.setGradientFill (ColourGradient (fillColour1,
-                                       50.0f - 2.0f + x,
-                                       static_cast<float> (proportionOfHeight (0.4000f)) - static_cast<float> (proportionOfHeight (0.2000f)) + y,
-                                       fillColour2,
-                                       50.0f - 2.0f + x,
-                                       static_cast<float> (proportionOfHeight (0.2000f)) - static_cast<float> (proportionOfHeight (0.2000f)) + y,
-                                       false));
-        g.fillRect (x, y, width, height);
-    }
-
-    {
-        int x = 2, y = proportionOfHeight (0.3900f), width = getWidth() - 4, height = proportionOfHeight (0.2100f);
-        Colour fillColour1 = Colour (0xff14576c), fillColour2 = Colour (0xff083543);
-        //[UserPaintCustomArguments] Customize the painting arguments here..
-        //[/UserPaintCustomArguments]
-        g.setGradientFill (ColourGradient (fillColour1,
-                                       50.0f - 2.0f + x,
-                                       static_cast<float> (proportionOfHeight (0.4000f)) - static_cast<float> (proportionOfHeight (0.3900f)) + y,
-                                       fillColour2,
-                                       50.0f - 2.0f + x,
-                                       static_cast<float> (proportionOfHeight (0.6000f)) - static_cast<float> (proportionOfHeight (0.3900f)) + y,
-                                       false));
-        g.fillRect (x, y, width, height);
-    }
-
-    {
-        float x = static_cast<float> (proportionOfWidth (0.0964f)), y = static_cast<float> (proportionOfHeight (0.3616f)), width = static_cast<float> (proportionOfWidth (0.8132f)), height = static_cast<float> (proportionOfHeight (0.2137f));
-        Colour fillColour1 = Colour (0x8fa52a2a), fillColour2 = Colour (0xb6a5462a);
-        Colour strokeColour = Colours::cadetblue;
-        //[UserPaintCustomArguments] Customize the painting arguments here..
-        //[/UserPaintCustomArguments]
-        g.setGradientFill (ColourGradient (fillColour1,
-                                       static_cast<float> (proportionOfWidth (0.5878f)) - static_cast<float> (proportionOfWidth (0.0964f)) + x,
-                                       static_cast<float> (proportionOfHeight (0.3566f)) - static_cast<float> (proportionOfHeight (0.3616f)) + y,
-                                       fillColour2,
-                                       static_cast<float> (proportionOfWidth (0.7123f)) - static_cast<float> (proportionOfWidth (0.0964f)) + x,
-                                       static_cast<float> (proportionOfHeight (0.5736f)) - static_cast<float> (proportionOfHeight (0.3616f)) + y,
-                                       false));
-        g.fillRoundedRectangle (x, y, width, height, 10.000f);
-        g.setColour (strokeColour);
-        g.drawRoundedRectangle (x, y, width, height, 10.000f, 2.000f);
-    }
+    g.fillAll (Colour (0xff0f1720));
 
     //[UserPaint] Add your own custom painting code here..
     //[/UserPaint]
@@ -592,46 +570,67 @@ void PanelArpAndFilter::resized()
     //[UserPreResize] Add your own custom resize code here..
     //[/UserPreResize]
 
-    arpGroupComponent->setBounds (proportionOfWidth (0.0169f), proportionOfHeight (0.0254f), proportionOfWidth (0.9630f), proportionOfHeight (0.3043f));
-    arpBPM->setBounds (proportionOfWidth (0.1521f), proportionOfHeight (0.1141f), proportionOfWidth (0.1373f), proportionOfHeight (0.1759f));
-    arpBPMLabel->setBounds (proportionOfWidth (0.1774f), proportionOfHeight (0.0761f), proportionOfWidth (0.0908f), 20);
-    arpDirectionLabel->setBounds (proportionOfWidth (0.4393f), proportionOfHeight (0.0887f), proportionOfWidth (0.0908f), 20);
-    arpOctaveLabel->setBounds (proportionOfWidth (0.2978f), proportionOfHeight (0.1014f), proportionOfWidth (0.0908f), 20);
-    arpPatternLabel->setBounds (proportionOfWidth (0.5913f), proportionOfHeight (0.0887f), proportionOfWidth (0.0908f), 20);
-    arpDivisionLabel->setBounds (proportionOfWidth (0.4393f), proportionOfHeight (0.2029f), proportionOfWidth (0.0908f), 20);
-    arpDurationLabel->setBounds (proportionOfWidth (0.5913f), proportionOfHeight (0.2029f), proportionOfWidth (0.0908f), 20);
-    arpLatchLabel->setBounds (proportionOfWidth (0.8110f), proportionOfHeight (0.1521f), proportionOfWidth (0.0908f), 20);
-    arpDirectionCombo->setBounds (proportionOfWidth (0.4393f), proportionOfHeight (0.1268f), proportionOfWidth (0.0908f), 20);
-    arpOctavleSlider->setBounds (proportionOfWidth (0.2978f), proportionOfHeight (0.1411f), proportionOfWidth (0.0908f), proportionOfHeight (0.1220f));
-    arpPatternCombo->setBounds (proportionOfWidth (0.5913f), proportionOfHeight (0.1268f), proportionOfWidth (0.0908f), 20);
-    arpDivisionCombo->setBounds (proportionOfWidth (0.4393f), proportionOfHeight (0.2409f), proportionOfWidth (0.0908f), 20);
-    arpDurationCombo->setBounds (proportionOfWidth (0.5913f), proportionOfHeight (0.2409f), proportionOfWidth (0.0908f), 20);
-    arpLatchCombo->setBounds (proportionOfWidth (0.8110f), proportionOfHeight (0.1902f), proportionOfWidth (0.0908f), 20);
-    filterGroupComponent->setBounds (proportionOfWidth (0.0908f), proportionOfHeight (0.3629f), proportionOfWidth (0.8184f), proportionOfHeight (0.2076f));
-    filterParam1Label->setBounds (proportionOfWidth (0.4551f), proportionOfHeight (0.3803f), proportionOfWidth (0.0908f), 20);
-    filterParam1Slider->setBounds (proportionOfWidth (0.4551f), proportionOfHeight (0.4152f), proportionOfWidth (0.0908f), proportionOfHeight (0.1220f));
-    filterParam2Label->setBounds (proportionOfWidth (0.5449f), proportionOfHeight (0.3772f), proportionOfWidth (0.0908f), 20);
-    filterParam2Slider->setBounds (proportionOfWidth (0.5449f), proportionOfHeight (0.4168f), proportionOfWidth (0.0908f), proportionOfHeight (0.1220f));
-    filterGainLabel->setBounds (proportionOfWidth (0.7276f), proportionOfHeight (0.3772f), proportionOfWidth (0.0908f), 20);
-    filterGainSlider->setBounds (proportionOfWidth (0.7276f), proportionOfHeight (0.4152f), proportionOfWidth (0.0908f), proportionOfHeight (0.1220f));
-    arpClockComboBox->setBounds (proportionOfWidth (0.0338f), proportionOfHeight (0.1268f), proportionOfWidth (0.0908f), 20);
-    clockLabel->setBounds (proportionOfWidth (0.0507f), proportionOfHeight (0.0634f), 64, 24);
-    filterComboBox->setBounds (proportionOfWidth (0.1816f), proportionOfHeight (0.4517f), proportionOfWidth (0.1816f), 20);
+    auto content = getLocalBounds().reduced (12, 10);
+    constexpr int moduleGap = 10;
+    const int arpHeight = roundToInt (content.getHeight() * 0.30f);
+    const int filterHeight = roundToInt (content.getHeight() * 0.22f);
+    auto filterBounds = content.removeFromTop (filterHeight);
+    content.removeFromTop (moduleGap);
+    auto arpBounds = content.removeFromTop (arpHeight);
+    content.removeFromTop (moduleGap);
+    auto scalingBounds = content;
+
+    arpGroupComponent->setBounds (arpBounds);
+    filterGroupComponent->setBounds (filterBounds);
+
+    const auto arpX = [&arpBounds] (float p) { return arpBounds.getX() + roundToInt (arpBounds.getWidth() * p); };
+    const int arpTop = arpBounds.getY();
+    clockLabel->setBounds (arpBounds.getX() + 22, arpTop + 35, 64, 24);
+    arpClockComboBox->setBounds (arpBounds.getX() + 22, arpTop + 65, 120, 22);
+    arpBPMLabel->setBounds (arpX (0.17f), arpTop + 31, 80, 20);
+    arpBPM->setBounds (arpX (0.16f), arpTop + 52, 95, jmax (72, arpBounds.getHeight() - 64));
+    arpOctaveLabel->setBounds (arpX (0.30f), arpTop + 43, 80, 20);
+    arpOctavleSlider->setBounds (arpX (0.30f), arpTop + 66, 80, jmax (60, arpBounds.getHeight() - 82));
+    arpDirectionLabel->setBounds (arpX (0.43f), arpTop + 35, 120, 20);
+    arpDirectionCombo->setBounds (arpX (0.43f), arpTop + 61, 120, 22);
+    arpDivisionLabel->setBounds (arpX (0.43f), arpTop + 96, 120, 20);
+    arpDivisionCombo->setBounds (arpX (0.43f), arpTop + 122, 120, 22);
+    arpPatternLabel->setBounds (arpX (0.60f), arpTop + 35, 120, 20);
+    arpPatternCombo->setBounds (arpX (0.60f), arpTop + 61, 120, 22);
+    arpDurationLabel->setBounds (arpX (0.60f), arpTop + 96, 120, 20);
+    arpDurationCombo->setBounds (arpX (0.60f), arpTop + 122, 120, 22);
+    arpLatchLabel->setBounds (arpX (0.82f), arpTop + 59, 100, 20);
+    arpLatchCombo->setBounds (arpX (0.82f), arpTop + 85, 100, 22);
+
+    const auto filterX = [&filterBounds] (float p) { return filterBounds.getX() + roundToInt (filterBounds.getWidth() * p); };
+    const int filterTop = filterBounds.getY();
+    const int filterControlY = filterTop + 45;
+    const int filterKnobHeight = jmax (58, filterBounds.getHeight() - 54);
+    filterComboBox->setBounds (filterX (0.08f), filterTop + roundToInt (filterBounds.getHeight() * 0.52f),
+        roundToInt (filterBounds.getWidth() * 0.22f), 22);
+    filterParam1Label->setBounds (filterX (0.45f), filterTop + 22, 85, 20);
+    filterParam1Slider->setBounds (filterX (0.45f), filterControlY, 85, filterKnobHeight);
+    filterParam2Label->setBounds (filterX (0.57f), filterTop + 22, 85, 20);
+    filterParam2Slider->setBounds (filterX (0.57f), filterControlY, 85, filterKnobHeight);
+    filterGainLabel->setBounds (filterX (0.76f), filterTop + 22, 85, 20);
+    filterGainSlider->setBounds (filterX (0.76f), filterControlY, 85, filterKnobHeight);
     //[UserResized] Add your own custom resize handling here..
 
-	float h = 0.7f;
+	auto noteLeft = scalingBounds.removeFromLeft ((scalingBounds.getWidth() - moduleGap) / 2);
+	scalingBounds.removeFromLeft (moduleGap);
 	for (int k = 0; k < 2; k++) {
-		// 0.05 0.65 0.47 0.25
-		noteGroupComponent[k]->setBounds(proportionOfWidth(0.03f + .5f * k), proportionOfHeight(0.65f), proportionOfWidth(0.44f), proportionOfHeight(0.25f));
-
-		noteBeforeLabel[k]->setBounds(proportionOfWidth(0.08f + .5f * k), proportionOfHeight(h), proportionOfWidth(0.07f), 20);
-		noteBefore[k]->setBounds(proportionOfWidth(0.08f + .5f * k), proportionOfHeight(h + 0.05f), proportionOfWidth(0.07f), 20);
-
-		noteBreakLabel[k]->setBounds(proportionOfWidth(0.20f + .5f * k), proportionOfHeight(h), proportionOfWidth(0.09f), 20);
-		noteBreak[k]->setBounds(proportionOfWidth(0.20f + .5f * k), proportionOfHeight(h + 0.03f), proportionOfWidth(0.09f), proportionOfHeight(0.12f));
-
-		noteAfterLabel[k]->setBounds(proportionOfWidth(0.34f + .5f * k), proportionOfHeight(h), proportionOfWidth(0.07f), 20);
-		noteAfter[k]->setBounds(proportionOfWidth(0.34f + .5f * k), proportionOfHeight(h + 0.05f), proportionOfWidth(0.07f), 20);
+		auto groupBounds = k == 0 ? noteLeft : scalingBounds;
+		noteGroupComponent[k]->setBounds(groupBounds);
+		const int labelY = groupBounds.getY() + 38;
+		const int controlY = labelY + 28;
+		const int comboWidth = jmax (90, roundToInt (groupBounds.getWidth() * 0.22f));
+		noteBeforeLabel[k]->setBounds(groupBounds.getX() + 35, labelY, comboWidth, 20);
+		noteBefore[k]->setBounds(groupBounds.getX() + 35, controlY, comboWidth, 22);
+		noteBreakLabel[k]->setBounds(groupBounds.getCentreX() - 50, labelY, 100, 20);
+		noteBreak[k]->setBounds(groupBounds.getCentreX() - 45, controlY - 8, 90,
+			jlimit (68, 100, groupBounds.getBottom() - controlY - 16));
+		noteAfterLabel[k]->setBounds(groupBounds.getRight() - comboWidth - 35, labelY, comboWidth, 20);
+		noteAfter[k]->setBounds(groupBounds.getRight() - comboWidth - 35, controlY, comboWidth, 22);
 	}
     //[/UserResized]
 }
@@ -730,7 +729,7 @@ void PanelArpAndFilter::comboBoxChanged(ComboBox* comboBoxThatHasChanged, bool f
 		AudioProcessorParameter* parameterReady = parameterMap[comboBoxThatHasChanged->getName()];
 		if (parameterReady != nullptr) {
 			float value = (float)comboBoxThatHasChanged->getSelectedId();
-			((MidifiedFloatParameter*)parameterReady)->setRealValue(value);
+			static_cast<MidifiedFloatParameter*>(parameterReady)->setRealValue(value);
 		}
 	}
 
@@ -765,7 +764,7 @@ void PanelArpAndFilter::sliderValueChanged(Slider* sliderThatWasMoved, bool from
 		AudioProcessorParameter * parameterReady = parameterMap[sliderThatWasMoved->getName()];
 		if (parameterReady != nullptr) {
 			float value = (float)sliderThatWasMoved->getValue();
-			((MidifiedFloatParameter*)parameterReady)->setRealValue(value);
+			static_cast<MidifiedFloatParameter*>(parameterReady)->setRealValue(value);
 		}
 	}
 }

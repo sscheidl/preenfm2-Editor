@@ -24,6 +24,15 @@
 class preenfmLookAndFeel : public LookAndFeel_V4 {
 public:
 	preenfmLookAndFeel();
+
+	Font getTextButtonFont(TextButton&, int buttonHeight) override;
+	int getTabButtonBestWidth(TabBarButton&, int tabDepth) override;
+	void drawButtonBackground(Graphics&, Button&, const Colour& backgroundColour,
+		bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+	void drawGroupComponentOutline(Graphics&, int width, int height, const String& text,
+		const Justification&, GroupComponent&) override;
+	void drawTabButton(TabBarButton&, Graphics&, bool isMouseOver, bool isMouseDown) override;
+
 	void drawRotarySlider(Graphics& g, int x, int y, int width, int height, float sliderPos,
 		float rotaryStartAngle, float rotaryEndAngle, Slider& slider) override;
 

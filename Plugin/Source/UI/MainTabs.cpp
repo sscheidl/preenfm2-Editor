@@ -46,6 +46,285 @@
 
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
+namespace {
+
+class HardwarePresetBrowser final : public Component,
+                                    private Timer
+{
+public:
+    explicit HardwarePresetBrowser(Pfm2AudioProcessor& processorToUse)
+        : processor(processorToUse)
+    {
+        titleLabel.setText(TRANS("Hardware"), dontSendNotification);
+        titleLabel.setFont(Font(FontOptions(16.0f, Font::bold)));
+        titleLabel.setJustificationType(Justification::centredLeft);
+        addAndMakeVisible(titleLabel);
+
+        configureCaption(bankLabel, TRANS("Bank"));
+        configureCaption(presetLabel, TRANS("Preset"));
+
+        // Only 64 regular patch banks are addressable on the hardware
+        // (NUMBEROFPREENFMBANKS); bank 65..128 can never exist.
+        for (int number = 1; number <= PREENFM_EDITOR_BANK_COUNT; ++number) {
+            bankCombo.addItem(String(number), number);
+        }
+        for (int number = 1; number <= PREENFM_EDITOR_PRESET_COUNT; ++number) {
+            presetCombo.addItem(String(number), number);
+        }
+
+        bankCombo.setTooltip(TRANS(
+            "Native PreenFM bank number 1-64 (the MIDI protocol sends this zero-based)"));
+        presetCombo.setTooltip(TRANS(
+            "Preset number 1-128 (the MIDI protocol sends this zero-based)"));
+        bankCombo.setSelectedId(processor.getHardwarePresetBank(),
+            dontSendNotification);
+        presetCombo.setSelectedId(processor.getHardwarePresetNumber(),
+            dontSendNotification);
+        bankCombo.onChange = [this] { targetChanged(); };
+        presetCombo.onChange = [this] { targetChanged(); };
+        addAndMakeVisible(bankCombo);
+        addAndMakeVisible(presetCombo);
+
+        previousButton.setButtonText(TRANS("<"));
+        previousButton.setTooltip(TRANS("Load the previous preset"));
+        previousButton.onClick = [this] { loadRelativePreset(-1); };
+        addAndMakeVisible(previousButton);
+
+        nextButton.setButtonText(TRANS(">"));
+        nextButton.setTooltip(TRANS("Load the next preset"));
+        nextButton.onClick = [this] { loadRelativePreset(1); };
+        addAndMakeVisible(nextButton);
+
+        loadButton.setButtonText(TRANS("Load"));
+        loadButton.setTooltip(TRANS(
+            "Select this bank/preset on the hardware and pull it into the editor"));
+        loadButton.onClick = [this] { loadSelectedPreset(); };
+        addAndMakeVisible(loadButton);
+
+        storeButton.setButtonText(TRANS("Store"));
+        storeButton.setEnabled(false);
+        storeButton.setTooltip(TRANS(
+            "Write the current patch into the selected slot (firmware 3.00 alpha)"));
+        storeButton.onClick = [this] { confirmAndStore(); };
+        addAndMakeVisible(storeButton);
+
+        positionButton.setButtonText(TRANS("Position"));
+        positionButton.setTooltip(TRANS(
+            "Ask the hardware which bank and preset it is currently on"));
+        positionButton.onClick = [this] { processor.requestHardwarePosition(); };
+        addAndMakeVisible(positionButton);
+
+        configureInfo(targetInfoLabel);
+        configureInfo(positionInfoLabel);
+        configureInfo(protocolInfoLabel);
+        configureInfo(operationLabel);
+        // Running operation or last error, kept visually distinct.
+        operationLabel.setColour(Label::textColourId, Colour(0xffffc46b));
+        operationLabel.setJustificationType(Justification::topLeft);
+
+        refreshFromProcessor();
+
+        // The permanent header replaces the former Presets callout. Checking
+        // once when it is created keeps the Store and Position state current
+        // without requiring a separate Protocol button.
+        processor.requestEditorCapabilities();
+
+        setSize(900, 66);
+        startTimerHz(12);
+    }
+
+    void paint(Graphics& g) override
+    {
+        g.fillAll(Colour(0xff101c25));
+        g.setColour(Colour(0xff29404f));
+        g.drawHorizontalLine(getHeight() - 1, 0.0f,
+            static_cast<float>(getWidth()));
+    }
+
+    void resized() override
+    {
+        constexpr int margin = 12;
+        constexpr int gap = 6;
+        constexpr int controlHeight = 24;
+        int x = margin;
+
+        titleLabel.setBounds(x, 5, 76, controlHeight);
+        x += 80;
+        bankLabel.setBounds(x, 5, 36, controlHeight);
+        x += 36;
+        bankCombo.setBounds(x, 5, 58, controlHeight);
+        x += 58 + gap;
+        presetLabel.setBounds(x, 5, 46, controlHeight);
+        x += 46;
+        previousButton.setBounds(x, 5, 28, controlHeight);
+        x += 28 + 3;
+        presetCombo.setBounds(x, 5, 58, controlHeight);
+        x += 58 + 3;
+        nextButton.setBounds(x, 5, 28, controlHeight);
+        x += 28 + 10;
+        loadButton.setBounds(x, 5, 58, controlHeight);
+        x += 58 + gap;
+        storeButton.setBounds(x, 5, 58, controlHeight);
+        x += 58 + gap;
+        positionButton.setBounds(x, 5, 72, controlHeight);
+
+        const int secondRowY = 34;
+        const int available = getWidth() - margin * 2;
+        const int targetWidth = jlimit(130, 180, available / 5);
+        const int positionWidth = jlimit(160, 230, available / 4);
+        const int protocolWidth = jlimit(150, 210, available / 5);
+        x = margin;
+        targetInfoLabel.setBounds(x, secondRowY, targetWidth, 22);
+        x += targetWidth + gap;
+        positionInfoLabel.setBounds(x, secondRowY, positionWidth, 22);
+        x += positionWidth + gap;
+        protocolInfoLabel.setBounds(x, secondRowY, protocolWidth, 22);
+        x += protocolWidth + gap;
+        operationLabel.setBounds(x, secondRowY,
+            jmax(0, getWidth() - margin - x), 22);
+    }
+
+private:
+    void configureCaption(Label& label, const String& text)
+    {
+        label.setText(text, dontSendNotification);
+        label.setJustificationType(Justification::centredLeft);
+        addAndMakeVisible(label);
+    }
+
+    void configureInfo(Label& label)
+    {
+        label.setJustificationType(Justification::centredLeft);
+        label.setMinimumHorizontalScale(0.75f);
+        label.setColour(Label::textColourId, Colour(0xffd6e4ec));
+        addAndMakeVisible(label);
+    }
+
+    void targetChanged()
+    {
+        processor.setHardwarePresetTarget(bankCombo.getSelectedId(),
+            presetCombo.getSelectedId());
+        refreshFromProcessor();
+    }
+
+    void loadSelectedPreset()
+    {
+        targetChanged();
+        processor.loadHardwarePreset(processor.getHardwarePresetBank(),
+            processor.getHardwarePresetNumber());
+        refreshFromProcessor();
+    }
+
+    void loadRelativePreset(int delta)
+    {
+        const int newPreset = jlimit(1, PREENFM_EDITOR_PRESET_COUNT,
+            presetCombo.getSelectedId() + delta);
+        presetCombo.setSelectedId(newPreset, dontSendNotification);
+        loadSelectedPreset();
+    }
+
+    void confirmAndStore()
+    {
+        targetChanged();
+        const int bank = processor.getHardwarePresetBank();
+        const int preset = processor.getHardwarePresetNumber();
+
+        // The firmware writes immediately and without any confirmation of its
+        // own, so the only chance to warn about overwriting a slot is here.
+        // Asynchronous, so no modal loop is entered.
+        Component::SafePointer<HardwarePresetBrowser> safeThis(this);
+        AlertWindow::showOkCancelBox(MessageBoxIconType::WarningIcon,
+            TRANS("Overwrite hardware preset?"),
+            TRANS("This overwrites bank ") + String(bank)
+                + TRANS(", preset ") + String(preset)
+                + TRANS(" on the PreenFM immediately. The current editor patch "
+                    "is pushed first and then written. This cannot be undone."),
+            TRANS("Store"), TRANS("Cancel"), this,
+            ModalCallbackFunction::create(
+                [safeThis, bank, preset](int result) {
+                    if (result == 1 && safeThis != nullptr) {
+                        safeThis->processor.beginHardwareStore(bank, preset);
+                        safeThis->refreshFromProcessor();
+                    }
+                }));
+    }
+
+    void timerCallback() override
+    {
+        const int revision = processor.getProtocolRevision();
+        if (revision != lastSeenRevision) {
+            lastSeenRevision = revision;
+            refreshFromProcessor();
+        }
+    }
+
+    void refreshFromProcessor()
+    {
+        lastSeenRevision = processor.getProtocolRevision();
+
+        targetInfoLabel.setText("Target: bank "
+            + String(processor.getHardwarePresetBank()) + ", preset "
+            + String(processor.getHardwarePresetNumber()),
+            dontSendNotification);
+
+        if (processor.isReportedHardwarePositionValid()) {
+            positionInfoLabel.setText("Hardware: bank "
+                + String(processor.getReportedHardwareBank()) + ", preset "
+                + String(processor.getReportedHardwarePreset()),
+                dontSendNotification);
+        }
+        else {
+            positionInfoLabel.setText(
+                TRANS("Hardware: position unknown"), dontSendNotification);
+        }
+
+        protocolInfoLabel.setText(processor.getEditorProtocolStatusText(),
+            dontSendNotification);
+
+        const String operation = processor.getLastOperationText();
+        operationLabel.setText(operation, dontSendNotification);
+
+        const bool busy = processor.isHardwareBusy();
+        // Store and Load are locked against double clicks and against each
+        // other while a transaction is open. After a store with an unknown
+        // outcome, Store stays off until Position has resynchronised.
+        storeButton.setEnabled(processor.canStartStore());
+        loadButton.setEnabled(!busy);
+        previousButton.setEnabled(!busy);
+        nextButton.setEnabled(!busy);
+        positionButton.setEnabled(processor.isPositionQuerySupported() && !busy);
+
+        if (processor.isStoreBlockedByUnknownOutcome()) {
+            storeButton.setTooltip(TRANS(
+                "Blocked: a previous store had an unknown outcome. Use Position "
+                "to resynchronise and check the slot on the hardware first."));
+        }
+        else {
+            storeButton.setTooltip(processor.isStoreSupported()
+                ? TRANS("Write the current patch into the selected slot")
+                : TRANS("Needs firmware 3.00 alpha with Receives: NRPN or CC & NRPN"));
+        }
+    }
+
+    Pfm2AudioProcessor& processor;
+    Label titleLabel;
+    Label bankLabel;
+    Label presetLabel;
+    Label targetInfoLabel;
+    Label positionInfoLabel;
+    Label protocolInfoLabel;
+    Label operationLabel;
+    ComboBox bankCombo;
+    ComboBox presetCombo;
+    TextButton previousButton;
+    TextButton nextButton;
+    TextButton loadButton;
+    TextButton storeButton;
+    TextButton positionButton;
+    int lastSeenRevision = -1;
+};
+
+}
 //[/MiscUserDefs]
 
 //==============================================================================
@@ -56,10 +335,10 @@ MainTabs::MainTabs ()
 
     tabbedComponent.reset (new TabbedComponent (TabbedButtonBar::TabsAtTop));
     addAndMakeVisible (tabbedComponent.get());
-    tabbedComponent->setTabBarDepth (30);
-    tabbedComponent->addTab (TRANS("Engine"), Colour (0xff083543), new PanelEngine(), true);
-    tabbedComponent->addTab (TRANS("Modulation"), Colour (0xff083543), new PanelModulation(), true);
-    tabbedComponent->addTab (TRANS("Arp & Filter"), Colour (0xff083543), new PanelArpAndFilter(), true);
+    tabbedComponent->setTabBarDepth (38);
+    tabbedComponent->addTab (TRANS("Engine"), Colour (0xff0c151d), new PanelEngine(), true);
+    tabbedComponent->addTab (TRANS("Modulation"), Colour (0xff0d1620), new PanelModulation(), true);
+    tabbedComponent->addTab (TRANS("Arp & Filter"), Colour (0xff0f1720), new PanelArpAndFilter(), true);
     tabbedComponent->setCurrentTabIndex (0);
 
     pullButton.reset (new TextButton ("pull button"));
@@ -72,7 +351,9 @@ MainTabs::MainTabs ()
                                       TRANS("preset_89ABC")));
     addAndMakeVisible (presetNameLabel.get());
     presetNameLabel->setTooltip (TRANS("Click to edit"));
-    presetNameLabel->setFont (Font (20.00f, Font::plain).withTypefaceStyle ("Bold"));
+    presetNameLabel->setFont (Font (FontOptions (20.00f, Font::plain)
+                                      .withMetricsKind (TypefaceMetricsKind::legacy))
+                                      .withTypefaceStyle ("Bold"));
     presetNameLabel->setJustificationType (Justification::centredLeft);
     presetNameLabel->setEditable (true, true, false);
     presetNameLabel->setColour (Label::textColourId, Colours::aliceblue);
@@ -119,15 +400,12 @@ MainTabs::MainTabs ()
     addAndMakeVisible (deviceButton.get());
     deviceButton->setButtonText (TRANS("Midi"));
     deviceButton->addListener (this);
-    deviceButton->setColour (TextButton::buttonColourId, Colour (0x005c5da4));
-    deviceButton->setColour (TextButton::buttonOnColourId, Colours::black);
 
     versionButton.reset (new HyperlinkButton (TRANS("v?.?.?"),
                                               URL ("https://github.com/Ixox/preenfm2Controller")));
     addAndMakeVisible (versionButton.get());
     versionButton->setTooltip (TRANS("https://github.com/Ixox/preenfm2Controller"));
     versionButton->setButtonText (TRANS("v?.?.?"));
-    versionButton->setColour (HyperlinkButton::textColourId, Colours::beige);
 
     pfmTypeCombo.reset (new ComboBox ("pfm Type"));
     addAndMakeVisible (pfmTypeCombo.get());
@@ -144,11 +422,7 @@ MainTabs::MainTabs ()
 
 
     //[UserPreSize]
-    // Black background
-    pfmTypeCombo->setColour(ComboBox::backgroundColourId, Colours::black);
-    pfmTypeCombo->setColour(ComboBox::textColourId, Colours::aqua);
     pfmTypeCombo->setSelectedId(2);
-    midiChannelCombo->setColour(ComboBox::backgroundColourId, Colours::black);
 
 	midiChannelCombo->setSelectedId(1);
     pfmTypeCombo->setSelectedId(1);
@@ -175,6 +449,7 @@ MainTabs::~MainTabs()
     //[Destructor_pre]. You can add your own custom destruction code here..
     //[/Destructor_pre]
 
+    hardwarePresetBrowser = nullptr;
     tabbedComponent = nullptr;
     pullButton = nullptr;
     presetNameLabel = nullptr;
@@ -195,7 +470,7 @@ void MainTabs::paint (Graphics& g)
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    g.fillAll (Colour (0xff0b232a));
+    g.fillAll (Colour (0xff0b1117));
 
     //[UserPaint] Add your own custom painting code here..
     //[/UserPaint]
@@ -206,12 +481,20 @@ void MainTabs::resized()
     //[UserPreResize] Add your own custom resize code here..
     //[/UserPreResize]
 
-    tabbedComponent->setBounds (0, 10, getWidth() - 0, getHeight() - 0);
-    pullButton->setBounds (getWidth() - 116, 8, 55, 24);
-    pushButton->setBounds (getWidth() - 184, 8, 55, 24);
-    midiChannelCombo->setBounds (getWidth() - 254, 8, 55, 24);
-    deviceButton->setBounds (getWidth() - 330, 6, 67, 28);
-    versionButton->setBounds (getWidth() - 60, 9, 56, 20);
+    constexpr int presetHeaderHeight = 66;
+    if (hardwarePresetBrowser != nullptr)
+        hardwarePresetBrowser->setBounds (0, 0, getWidth(), presetHeaderHeight);
+    tabbedComponent->setBounds (0, presetHeaderHeight, getWidth(),
+        jmax (0, getHeight() - presetHeaderHeight));
+    const int toolbarY = presetHeaderHeight + 8;
+    pullButton->setBounds (getWidth() - 116, toolbarY, 50, 24);
+    pushButton->setBounds (getWidth() - 172, toolbarY, 50, 24);
+    midiChannelCombo->setBounds (getWidth() - 222, toolbarY, 44, 24);
+    deviceButton->setBounds (getWidth() - 282, toolbarY - 2, 54, 28);
+    versionButton->setBounds (getWidth() - 60, toolbarY + 1, 56, 20);
+	pfmTypeCombo->setBounds (350, toolbarY, 80, 24);
+	presetNameLabel->setBounds (440, toolbarY,
+        jmax (90, getWidth() - 798), 24);
     //[UserResized] Add your own custom resize handling here..
     //[/UserResized]
 }
@@ -250,7 +533,6 @@ void MainTabs::buttonClicked (Button* buttonThatWasClicked)
 		}
         //[/UserButtonCode_deviceButton]
     }
-
     //[UserbuttonClicked_Post]
     //[/UserbuttonClicked_Post]
 }
@@ -323,35 +605,54 @@ void MainTabs::comboBoxChanged (ComboBox* comboBoxThatHasChanged)
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 
-MidifiedFloatParameter* MainTabs::getParameterFromName(String componentName) {
-	const Array<AudioProcessorParameter *> parameters = audioProcessor->getParameters();
+MidifiedFloatParameter* MainTabs::getParameterFromName(String requestedName) {
+	const auto& parameters = audioProcessor->getParameters();
 	for (int p = 0; p < parameters.size(); p++) {
-		MidifiedFloatParameter* midiFP = (MidifiedFloatParameter*)parameters[p];
-		if (midiFP->getName() == componentName) {
+		auto* midiFP = static_cast<MidifiedFloatParameter*>(parameters[p]);
+		if (midiFP->getName() == requestedName) {
 			return midiFP;
 		}
 	}
 	return nullptr;
 }
 
+void MainTabs::setMidiQueueWarning(uint64_t droppedOutput, uint64_t droppedInput) {
+	if (droppedOutput == 0 && droppedInput == 0) {
+		deviceButton->setButtonText(TRANS("Midi"));
+		return;
+	}
 
-void MainTabs::buildParameters(AudioProcessor *audioProcessor) {
-	this->audioProcessor = audioProcessor;
+	deviceButton->setButtonText(TRANS("Midi !"));
+	deviceButton->setTooltip(
+		"MIDI data loss: " + String(droppedOutput)
+		+ " outgoing and " + String(droppedInput)
+		+ " incoming queue events were rejected. Click to check the MIDI devices.");
+}
 
-	panelEngine->setParameterSet(audioProcessor);
+void MainTabs::buildParameters(AudioProcessor *processor) {
+	audioProcessor = processor;
+
+	if (auto* pfm2Processor = dynamic_cast<Pfm2AudioProcessor*>(processor)) {
+		hardwarePresetBrowser = std::make_unique<HardwarePresetBrowser>(
+			*pfm2Processor);
+		addAndMakeVisible(*hardwarePresetBrowser);
+		resized();
+	}
+
+	panelEngine->setParameterSet(processor);
 	panelEngine->buildParameters();
 
-	panelModulation->setParameterSet(audioProcessor);
+	panelModulation->setParameterSet(processor);
 	panelModulation->buildParameters();
 
-	panelArpAndFilter->setParameterSet(audioProcessor);
+	panelArpAndFilter->setParameterSet(processor);
 	panelArpAndFilter->buildParameters();
 }
 
 void MainTabs::updateUI(std::unordered_set<String> &paramSet) {
 
-    std::unordered_set<String>::const_iterator pfmType = paramSet.find("pfm Type");
-    if (pfmType != paramSet.end()) {
+    std::unordered_set<String>::const_iterator pfmTypeUpdate = paramSet.find("pfm Type");
+    if (pfmTypeUpdate != paramSet.end()) {
         MidifiedFloatParameter* param = getParameterFromName("pfm Type");
         pfmTypeCombo->setSelectedId((int)param->getRealValue());
     }
@@ -373,24 +674,19 @@ void MainTabs::setPresetName(String presetName) {
 	presetNameLabel->setText(presetName, dontSendNotification);
 }
 
-void MainTabs::setPresetNamePtr(char* presetNamePtr) {
-	this->presetNamePtr = presetNamePtr;
+void MainTabs::setPresetNamePtr(char* nameBuffer) {
+	presetNamePtr = nameBuffer;
 }
-
-void MainTabs::setMidiOutBuffer(MidiBuffer *midiOutBuffer) {
-	this->midiOutBuffer = midiOutBuffer;
-}
-
 
 void MainTabs::setMidiChannel(int newMidiChannel) {
 	midiChannelCombo->setSelectedId(newMidiChannel);
 }
 
-void MainTabs::setPfmType(int pfmType) {
-    pfmTypeCombo->setSelectedId(pfmType);
-    panelEngine->setPfmType(pfmType);
-    panelModulation->setPfmType(pfmType);
-    panelArpAndFilter->setPfmType(pfmType);
+void MainTabs::setPfmType(int newPfmType) {
+    pfmTypeCombo->setSelectedId(newPfmType);
+    panelEngine->setPfmType(newPfmType);
+    panelModulation->setPfmType(newPfmType);
+    panelArpAndFilter->setPfmType(newPfmType);
 }
 
 //[/MiscUserCode]
@@ -457,4 +753,3 @@ END_JUCER_METADATA
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]
-

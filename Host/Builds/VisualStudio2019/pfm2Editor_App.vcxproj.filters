@@ -448,9 +448,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\Plugin\Source\UI\png\AlgoPNG.cpp">
-      <Filter>pfm2Editor\Source\Plugin</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\Plugin\Source\UI\Enveloppe.cpp">
       <Filter>pfm2Editor\Source\Plugin</Filter>
     </ClCompile>
@@ -2580,9 +2577,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\Plugin\Source\UI\png\AlgoPNG.h">
-      <Filter>pfm2Editor\Source\Plugin</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\Plugin\Source\UI\Enveloppe.h">
       <Filter>pfm2Editor\Source\Plugin</Filter>
     </ClInclude>

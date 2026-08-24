@@ -104,5 +104,6 @@ String ListProperty::getFullPathName() {
     if (pfm2FilterListTest.getFile().exists()) {
         return pfm2FilterListTest.getFile().getFullPathName();
     }
+	return String();
 }
    

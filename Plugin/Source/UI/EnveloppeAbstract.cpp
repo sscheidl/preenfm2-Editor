@@ -19,6 +19,8 @@
 
 #include "EnveloppeAbstract.h"
 
+#include <limits>
+
  //==============================================================================
 EnveloppeAbstract::EnveloppeAbstract()
 {
@@ -28,6 +30,8 @@ EnveloppeAbstract::EnveloppeAbstract()
 	this->scaleY = 1;
 	this->draggingPointIndex = -1;
 	this->overPointIndex = -1;
+	this->oldMouseX = 0;
+	this->oldMouseY = 0;
 	this->xMax = 4.0;
     this->mouseOver = MOUSE_OVER_NONE;
 }
@@ -144,7 +148,7 @@ void EnveloppeAbstract::mouseMove(const MouseEvent &event) {
     oldMouseX = event.x;
     oldMouseY = event.y;
 
-    float smallestDistance = 999999999999;
+	float smallestDistance = std::numeric_limits<float>::max();
     MouseOverEnum oldMouseOver = mouseOver;
     int oldOverPointIndex = overPointIndex;
     int closestPoint = 0;
@@ -198,7 +202,7 @@ void EnveloppeAbstract::mouseMove(const MouseEvent &event) {
     return;
 }
 
-void EnveloppeAbstract::mouseExit(const MouseEvent &event) {
+void EnveloppeAbstract::mouseExit(const MouseEvent&) {
     this->mouseOver = MOUSE_OVER_NONE;
 	overPointIndex = -1;
     draggingPointIndex = -1;
@@ -215,7 +219,7 @@ void EnveloppeAbstract::mouseDown(const MouseEvent &event) {
 	}
 }
 
-void EnveloppeAbstract::mouseUp(const MouseEvent &event) {
+void EnveloppeAbstract::mouseUp(const MouseEvent&) {
 	if (draggingPointIndex != -1) {
 		draggingPointIndex = -1;
 	}

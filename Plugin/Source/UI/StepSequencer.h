@@ -28,7 +28,7 @@
 class StepSequencer : public Component
 {
 public:
-	StepSequencer(int numberOfValues, int maxValue, int nrpnBase);
+	StepSequencer(int numberOfValues, int maxValue);
 	~StepSequencer();
 	void mouseDrag(const MouseEvent &event) override;
 	void mouseDown(const MouseEvent &event) override;
@@ -40,7 +40,7 @@ public:
 	void updateValues(const MouseEvent& event);
 	void setValues(int x, int y);
 	void setValuesNoNotify(int x, int y);
-	int getValue(int step) const { if (step < numberOfValues) return values[step]; else return 0; }
+	int getValue(int step) const { if (step >= 0 && step < numberOfValues) return values[step]; else return 0; }
 
 	void paint(Graphics&) override;
 	void resized() override;

@@ -20,32 +20,36 @@
 #include "StepSequencer.h"
 
 //==============================================================================
-StepSequencer::StepSequencer(int numberOfValues, int maxValue, int nrpnBase)
+StepSequencer::StepSequencer(int numberOfValues, int maxValue)
 {
 	// In your constructor, you should add any child components, and
 	// initialise any special settings that your component needs.
 
-	this->numberOfValues = numberOfValues;
-	this->maxValue = maxValue;
-	this->values = new int[numberOfValues];
-	for (int k = 0; k < numberOfValues; k++) {
-		this->values[k] = (int)((float)maxValue / numberOfValues * k);
+	jassert(numberOfValues > 0);
+	jassert(maxValue > 1);
+	this->numberOfValues = jmax(1, numberOfValues);
+	this->maxValue = jmax(2, maxValue);
+	this->values = new int[this->numberOfValues];
+	for (int k = 0; k < this->numberOfValues; k++) {
+		this->values[k] = (int)((float)this->maxValue / this->numberOfValues * k);
 	}
 }
-
 StepSequencer::~StepSequencer()
 {
 	if (this->values != nullptr) {
-		delete this->values;
+		delete[] this->values;
 	}
 }
-
 void StepSequencer::paint(Graphics& g)
 {
+	if (getWidth() <= 0 || getHeight() <= 0) {
+		return;
+	}
+
 	float width = (float)getWidth() / numberOfValues;
 
 	for (int k = 0; k < numberOfValues; k++) {
-		float height = (float)getHeight() * values[k] / (maxValue - 1);
+		float height = (float)getHeight() * values[k] / maxValue;
 		uint8 alpha = (uint8)(100.0f + height * 70.0f / getHeight());
 		g.setColour(Colour::fromRGBA(180, 200, 220, alpha));
 		g.fillRect((float)k * width, (float)getHeight() - height, width, height);
@@ -72,6 +76,10 @@ int  StepSequencer::limitY(int y) {
 
 
 void StepSequencer::updateValues(const MouseEvent& event) {
+	if (getWidth() <= 0 || getHeight() <= 0) {
+		return;
+	}
+
 	if (event.mods.isRightButtonDown()) {
 		int x = limitX(event.x * numberOfValues / getWidth());
 		setValues(x, 0);
@@ -91,7 +99,7 @@ void StepSequencer::mouseDown(const MouseEvent &event) {
 	updateValues(event);
 }
 
-void StepSequencer::mouseUp(const MouseEvent &event) {
+void StepSequencer::mouseUp(const MouseEvent&) {
 }
 
 void StepSequencer::mouseDrag(const MouseEvent &event) {
@@ -99,7 +107,7 @@ void StepSequencer::mouseDrag(const MouseEvent &event) {
 }
 
 void StepSequencer::mouseDoubleClick(const MouseEvent& event) {
-	if (!event.mods.isLeftButtonDown()) {
+	if (!event.mods.isLeftButtonDown() || getWidth() <= 0) {
 		return;
 	}
 	int x = limitX(event.x * numberOfValues / getWidth());
@@ -108,10 +116,10 @@ void StepSequencer::mouseDoubleClick(const MouseEvent& event) {
 
 void StepSequencer::mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) {
 	//	debugValue = wheel.deltaY;
-	if (wheel.deltaY == 0) {
+	if (wheel.deltaY == 0 || getWidth() <= 0) {
 		return;
 	}
-	int x = event.x * numberOfValues / getWidth();
+	int x = limitX(event.x * numberOfValues / getWidth());
 	int y = values[x] + (wheel.deltaY > 0 ? 1 : -1) * (wheel.isReversed ? -1 : 1);
 	y = y < 0 ? 0 : (y > maxValue ? maxValue : y);
 	setValues(x, y);
@@ -126,12 +134,18 @@ void StepSequencer::resized()
 }
 
 void StepSequencer::setValuesNoNotify(int x, int y) {
-	values[x] = y;
+	if (x < 0 || x >= numberOfValues) {
+		return;
+	}
+	values[x] = limitY(y);
 }
 
 
 void StepSequencer::setValues(int x, int y) {
-	if (values[x] != y && y >= 0 && y < maxValue) {
+	if (x < 0 || x >= numberOfValues) {
+		return;
+	}
+	if (values[x] != y && y >= 0 && y <= maxValue) {
 		values[x] = y;
 		notifyObservers(x);
 		repaint();

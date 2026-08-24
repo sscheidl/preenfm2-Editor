@@ -104,46 +104,46 @@ private:
 
 
 	// LFO
-	ScopedPointer<TextButton> lfoButton[NUMBER_OF_LFO];
-	ScopedPointer<Label> lfoPhaseLabel;
-	ScopedPointer<Slider> lfoPhase[NUMBER_OF_LFO];
-	ScopedPointer<ComboBox> lfoShape[NUMBER_OF_LFO];
-	ScopedPointer<ComboBox> lfoExtMidiSync[NUMBER_OF_LFO];
-	ScopedPointer<Slider> lfoFrequency[NUMBER_OF_LFO];
-	ScopedPointer<Slider> lfoBias[NUMBER_OF_LFO];
-	ScopedPointer<ComboBox> lfoKsynOnOff[NUMBER_OF_LFO];
-	ScopedPointer<Slider> lfoKSync[NUMBER_OF_LFO];
-	ScopedPointer<Label> lfoFrequencyLabel;
-	ScopedPointer<Label> lfoBiasLabel;
-	ScopedPointer<Label> lfoKSynLabel;
-	ScopedPointer<ComboBox> enveloppeFree2Loop;
-	ScopedPointer<Label> enveloppeFree2LoopLabel;
+	std::unique_ptr<TextButton> lfoButton[NUMBER_OF_LFO];
+	std::unique_ptr<Label> lfoPhaseLabel;
+	std::unique_ptr<Slider> lfoPhase[NUMBER_OF_LFO];
+	std::unique_ptr<ComboBox> lfoShape[NUMBER_OF_LFO];
+	std::unique_ptr<ComboBox> lfoExtMidiSync[NUMBER_OF_LFO];
+	std::unique_ptr<Slider> lfoFrequency[NUMBER_OF_LFO];
+	std::unique_ptr<Slider> lfoBias[NUMBER_OF_LFO];
+	std::unique_ptr<ComboBox> lfoKsynOnOff[NUMBER_OF_LFO];
+	std::unique_ptr<Slider> lfoKSync[NUMBER_OF_LFO];
+	std::unique_ptr<Label> lfoFrequencyLabel;
+	std::unique_ptr<Label> lfoBiasLabel;
+	std::unique_ptr<Label> lfoKSynLabel;
+	std::unique_ptr<ComboBox> enveloppeFree2Loop;
+	std::unique_ptr<Label> enveloppeFree2LoopLabel;
 
 
 	// MATRIX
-	ScopedPointer<Label> matrixRowLabel[NUMBER_OF_MATRIX_ROW];
-	ScopedPointer<ComboBox> matrixSource[NUMBER_OF_MATRIX_ROW];
-	ScopedPointer<Slider> matrixMultipler[NUMBER_OF_MATRIX_ROW];
-	ScopedPointer<ComboBox> matrixDestination1[NUMBER_OF_MATRIX_ROW];
-    ScopedPointer<ComboBox> matrixDestination2[NUMBER_OF_MATRIX_ROW];
+	std::unique_ptr<Label> matrixRowLabel[NUMBER_OF_MATRIX_ROW];
+	std::unique_ptr<ComboBox> matrixSource[NUMBER_OF_MATRIX_ROW];
+	std::unique_ptr<Slider> matrixMultipler[NUMBER_OF_MATRIX_ROW];
+	std::unique_ptr<ComboBox> matrixDestination1[NUMBER_OF_MATRIX_ROW];
+    std::unique_ptr<ComboBox> matrixDestination2[NUMBER_OF_MATRIX_ROW];
 
 	// ENVELOPPES
-	ScopedPointer<EnveloppeFree1> enveloppeFree1;
-	ScopedPointer<EnveloppeFree2> enveloppeFree2;
+	std::unique_ptr<EnveloppeFree1> enveloppeFree1;
+	std::unique_ptr<EnveloppeFree2> enveloppeFree2;
 
 
 	// STEP SEQUENCER
-	ScopedPointer<TextButton> stepSeqButton[NUMBER_OF_STEP_SEQ];
-	ScopedPointer<StepSequencer> stepSequencer[NUMBER_OF_STEP_SEQ];
+	std::unique_ptr<TextButton> stepSeqButton[NUMBER_OF_STEP_SEQ];
+	std::unique_ptr<StepSequencer> stepSequencer[NUMBER_OF_STEP_SEQ];
 
-	ScopedPointer<Label> stepSeqBPMLabel;
-	ScopedPointer<ComboBox> stepSeqExtMidiSync[NUMBER_OF_STEP_SEQ];
-	ScopedPointer<Slider> stepSeqBPM[NUMBER_OF_STEP_SEQ];
-	ScopedPointer<Label> stepSeqGateLabel;
-	ScopedPointer<Slider> stepSeqGate[NUMBER_OF_STEP_SEQ];
+	std::unique_ptr<Label> stepSeqBPMLabel;
+	std::unique_ptr<ComboBox> stepSeqExtMidiSync[NUMBER_OF_STEP_SEQ];
+	std::unique_ptr<Slider> stepSeqBPM[NUMBER_OF_STEP_SEQ];
+	std::unique_ptr<Label> stepSeqGateLabel;
+	std::unique_ptr<Slider> stepSeqGate[NUMBER_OF_STEP_SEQ];
 
-	ScopedPointer<ListProperty> sourceList;
-	ScopedPointer<ListProperty> destList;
+	std::unique_ptr<ListProperty> sourceList;
+	std::unique_ptr<ListProperty> destList;
 	MidiBuffer* eventsToAdd;
 	bool initialized;
 

@@ -129,7 +129,6 @@ OBJECTS_SHARED_CODE := \
   $(JUCE_OBJDIR)/PanelArpAndFilter_ad31c1c2.o \
   $(JUCE_OBJDIR)/PanelEngine_cf196034.o \
   $(JUCE_OBJDIR)/PanelModulation_30f357ee.o \
-  $(JUCE_OBJDIR)/AlgoPNG_60eecabe.o \
   $(JUCE_OBJDIR)/PreenLookAndFeel_d8d8748e.o \
   $(JUCE_OBJDIR)/StepSequencer_13b10873.o \
   $(JUCE_OBJDIR)/ListProperty_f3fc239c.o \
@@ -256,11 +255,6 @@ $(JUCE_OBJDIR)/PanelEngine_cf196034.o: ../../Source/UI/PanelEngine.cpp
 $(JUCE_OBJDIR)/PanelModulation_30f357ee.o: ../../Source/UI/PanelModulation.cpp
 	-$(V_AT)mkdir -p $(JUCE_OBJDIR)
 	@echo "Compiling PanelModulation.cpp"
-	$(V_AT)$(CXX) $(JUCE_CXXFLAGS) $(JUCE_CPPFLAGS_SHARED_CODE) $(JUCE_CFLAGS_SHARED_CODE) -o "$@" -c "$<"
-
-$(JUCE_OBJDIR)/AlgoPNG_60eecabe.o: ../../Source/UI/png/AlgoPNG.cpp
-	-$(V_AT)mkdir -p $(JUCE_OBJDIR)
-	@echo "Compiling AlgoPNG.cpp"
 	$(V_AT)$(CXX) $(JUCE_CXXFLAGS) $(JUCE_CPPFLAGS_SHARED_CODE) $(JUCE_CFLAGS_SHARED_CODE) -o "$@" -c "$<"
 
 $(JUCE_OBJDIR)/PreenLookAndFeel_d8d8748e.o: ../../Source/UI/PreenLookAndFeel.cpp

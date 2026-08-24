@@ -32,18 +32,18 @@ public:
 
 	void paint(Graphics&);
 	// Must be implemented to deal with point value modification
-	void newXValue(int draggingPointIndex, float newX);
-	void newYValue(int draggingPointIndex, float newY);
+	void newXValue(int pointIndex, float newX);
+	void newYValue(int pointIndex, float newY);
 	const char ** getPointSuffix() const;
 	const char *getPointSuffix(int pointNumber, bool isX) const;
     void resized() override;
     void buttonClicked(Button* buttonThatWasClicked) override;
-    void setOperatorType(int operatorType);
+    void setOperatorType(int newOperatorType);
 
 private:
     float releaseTimeBeforeLoop;
     float releaseLevelBeforeLoop ;
-    ScopedPointer<ToggleButton> loop;
+    std::unique_ptr<ToggleButton> loop;
     int operatorType;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Enveloppe)

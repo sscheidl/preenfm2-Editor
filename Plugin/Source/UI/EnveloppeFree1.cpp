@@ -20,7 +20,7 @@
 #include "EnveloppeFree1.h"
 
 
-#include "../JuceLibraryCode/JuceHeader.h"
+#include "JuceHeader.h"
 #include "Enveloppe.h"
 
 
@@ -94,8 +94,8 @@ void EnveloppeFree1::paint(Graphics& g)
 }
 
 
-void EnveloppeFree1::newYValue(int draggingPointIndex, float newY) {
-	if (draggingPointIndex == 3) {
+void EnveloppeFree1::newYValue(int pointIndex, float newY) {
+	if (pointIndex == 3) {
 		pointList[2].get()->setYLockedValue(newY);
 	}
 }
@@ -105,7 +105,7 @@ const char ** EnveloppeFree1::getPointSuffix() const {
 	return __enveloppeFree2PointSuffix;
 }
 
-const char* EnveloppeFree1::getPointSuffix(int pointNumber, bool isX) const {
+const char* EnveloppeFree1::getPointSuffix(int pointNumber, bool) const {
 	return __enveloppeFree2PointSuffix[(pointNumber - 1)];
 }
 
