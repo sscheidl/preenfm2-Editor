@@ -78,6 +78,16 @@ Only the CMake-based Windows x64 build is maintained and tested for 4.0.4. The
 checked-in Projucer, Visual Studio 2019, Linux and macOS projects are legacy
 references and are not release build paths.
 
+### Hardware validation status
+
+As of August 2026, the matching PreenFM2 `3.00 alpha` VOSIM firmware is running
+on physical hardware without observed anomalies. PreenFM+ 4.0.4 has remained
+stable during Studio One use, and most editor-to-hardware workflows have been
+tested manually on the real instrument, including bidirectional parameter
+editing and the hardware-preset workflow. This is substantial practical
+validation, but not exhaustive coverage of every parameter mapping, host or
+rare timeout/error path.
+
 See [docs/MODERNIZATION.md](docs/MODERNIZATION.md) for migration details,
 validation status, corrected legacy bugs and remaining technical debt. Version
 4.x includes substantial correctness work inherited from the original editor in

@@ -13,6 +13,10 @@ This project follows semantic versioning.
   following the more familiar synthesizer signal-flow workflow.
 - Added explicit upstream/VOSIM credits and the tAUREON experimental
   AI-assisted development notice.
+- Confirmed stable Studio One operation and extensive manual interaction with a
+  physical PreenFM2 running the matching `3.00 alpha` VOSIM firmware. Most core
+  editor/hardware and preset workflows have now been exercised without observed
+  firmware anomalies; exhaustive parameter and rare-error coverage remains open.
 
 ## 4.0.3
 

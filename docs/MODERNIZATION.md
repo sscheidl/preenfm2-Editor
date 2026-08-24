@@ -88,8 +88,17 @@ are 4.x integration corrections rather than defects in the original release.
 - Release x64 standalone build
 - VST3 module manifest generation
 - VST3 binary architecture and standalone launch smoke tests
+- Studio One operation with the VST3 on Windows x64
+- Extended manual testing against a physical PreenFM2 running the matching
+  `3.00 alpha` VOSIM firmware
+- Stable bidirectional editor/hardware parameter operation and successful
+  practical testing of most hardware-preset workflows
 
-Hardware MIDI exchange and loading in representative DAWs remain manual tests.
+No anomalies have been observed in the firmware during current hardware use,
+and the editor has remained stable in the tested setup. Hardware MIDI exchange
+and preset operations are necessarily manual integration tests; exhaustive
+coverage of every parameter mapping, additional DAWs and rare timeout/error
+paths remains outstanding.
 
 Version 4.0.2 adds a hardware-preset browser for native PreenFM patch banks.
 The UI uses human-readable bank and preset positions 1-128, sends the firmware's
@@ -113,8 +122,9 @@ remote protocol, protocol version 1. The protocol occupies NRPN page 4
 older firmware simply ignores the requests and answers nothing.
 
 - **Capability detection.** The editor sends a capability query after choosing a
-  MIDI device and when the hardware-preset header is created, and offers an explicit
-  re-check. Store and the position query are enabled only after the firmware
+  MIDI device and when the hardware-preset header is created. Selecting the MIDI
+  device again provides an explicit re-check. Store and the position query are
+  enabled only after the firmware
   has confirmed protocol version 1 and the matching capability bits. Support is
   never inferred from a firmware version string. On timeout the editor reports
   that the protocol is unavailable; Load and Pull keep working.
