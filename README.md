@@ -1,15 +1,18 @@
 # PreenFM+
 
-PreenFM+ 4.x is a modernized Windows x64 VST3 and standalone editor for the
+PreenFM+ 4.0.7 Beta 1 is an experimental Windows x64 VST3 and standalone editor for the
 PreenFM2 and PreenFM3 hardware synthesizers. It combines the complete sound
 editing surface of Xavier Hosxe's original controller with a scalable JUCE 9
-interface, live bidirectional MIDI editing and direct hardware-preset workflow.
+interface, live bidirectional MIDI editing, direct hardware-preset workflow,
+guarded MPE routing and six selectable colour themes.
 
 <p align="center">
-  <img src="docs/PreenFM2_2026.png" alt="PreenFM2 test hardware running the 3.00 alpha firmware" width="900" />
+  <img src="docs/themes/taureon-engine.png" alt="PreenFM+ 4.0.7 Engine view with permanent preset header and tAUREON colour theme" width="1200" />
 </p>
 
-The PreenFM2 test unit running the hardware-tested 3.00-alpha developer firmware.
+Actual 4.0.7 editor render in the **tAUREON** theme (offline, not a live hardware
+session). [Download the Windows beta](https://github.com/sscheidl/preenfm2-Editor/releases/tag/v4.0.7-beta.1)
+or [explore all colour palettes](docs/COLOUR_THEMES.md).
 
 ## Current features
 
@@ -115,6 +118,12 @@ checked-in Projucer, Visual Studio 2019, Linux and macOS projects are legacy
 references and are not release build paths.
 
 ### Hardware validation status
+
+<p align="center">
+  <img src="docs/PreenFM2_2026.png" alt="PreenFM2 test hardware running the 3.00 alpha firmware" width="900" />
+</p>
+
+The PreenFM2 test unit running the hardware-tested 3.00-alpha developer firmware.
 
 As of August 2026, the matching PreenFM2 `3.00 alpha` VOSIM firmware is running
 on physical hardware without observed anomalies. PreenFM+ 4.0.4 has remained
