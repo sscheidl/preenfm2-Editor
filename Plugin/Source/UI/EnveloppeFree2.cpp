@@ -18,6 +18,7 @@
 
 
 #include "EnveloppeFree2.h"
+#include "PreenTheme.h"
 
 #include "Enveloppe.h"
 
@@ -59,14 +60,14 @@ void EnveloppeFree2::paint(Graphics& g)
 	static const String adsr[] = { "S", "A", "R" };
 	for (int v = 0; v < 3; v++) {
 
-		g.setColour(Colours::whitesmoke);
+		g.setColour(PreenTheme::colour(*this, PreenTheme::textId));
 		g.drawText(adsr[v], getWidth() - 80, 10 + v * 16, 50, 10, Justification::centred, true);
 
 		if (draggingPointIndex == v + 1) {
-			g.setColour(Colours::yellow);
+			g.setColour(PreenTheme::colour(*this, PreenTheme::brightId));
 		}
 		else {
-			g.setColour(Colours::whitesmoke);
+			g.setColour(PreenTheme::colour(*this, PreenTheme::textId));
 		}
 
 		switch (v) {

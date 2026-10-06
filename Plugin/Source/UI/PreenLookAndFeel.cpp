@@ -18,47 +18,75 @@
 
 #include "PreenLookAndFeel.h"
 
-namespace
-{
-const Colour background(0xff0b1117);
-const Colour surface(0xff111a24);
-const Colour surfaceRaised(0xff182532);
-const Colour outline(0xff314353);
-const Colour textPrimary(0xffedf4f7);
-const Colour textMuted(0xff9db0bd);
-const Colour accent(0xff35c2c8);
-const Colour accentBright(0xff5edbe0);
+preenfmLookAndFeel::preenfmLookAndFeel(const File& preferenceFile) : LookAndFeel_V4() {
+	setUsingNativeAlertWindows(false);
+	PropertiesFile::Options options;
+	options.applicationName = "PreenFM+";
+	options.filenameSuffix = "appearance";
+	options.folderName = "tAUREON";
+	options.osxLibrarySubFolder = "Application Support";
+	options.millisecondsBeforeSaving = 0;
+	appearanceSettings = preferenceFile == File{}
+		? std::make_unique<PropertiesFile>(options)
+		: std::make_unique<PropertiesFile>(preferenceFile, options);
+	setTheme(appearanceSettings->getIntValue("theme", 0), false);
 }
 
-preenfmLookAndFeel::preenfmLookAndFeel() : LookAndFeel_V4() {
-	setUsingNativeAlertWindows(false);
+void preenfmLookAndFeel::setTheme(int index, bool persist)
+{
+	themeIndex = jlimit(0, PreenTheme::count - 1, index);
+	palette = PreenTheme::palette(themeIndex);
+	using namespace PreenTheme;
+	setColour(backgroundId, palette.background);
+	setColour(surfaceId, palette.surface);
+	setColour(raisedId, palette.surfaceRaised);
+	setColour(outlineId, palette.outline);
+	setColour(textId, palette.textPrimary);
+	setColour(mutedId, palette.textMuted);
+	setColour(accentId, palette.accent);
+	setColour(brightId, palette.accentBright);
+	setColour(warningId, palette.warning);
+	setColour(TextEditor::backgroundColourId, palette.surfaceRaised);
+	setColour(TextEditor::textColourId, palette.textPrimary);
+	setColour(TextEditor::highlightColourId, palette.accent);
+	setColour(TextEditor::highlightedTextColourId, palette.background);
+	setColour(ToggleButton::textColourId, palette.textPrimary);
+	setColour(ToggleButton::tickColourId, palette.accentBright);
+	setColour(ToggleButton::tickDisabledColourId, palette.textMuted);
+	setColour(AlertWindow::backgroundColourId, palette.surface);
+	setColour(AlertWindow::textColourId, palette.textPrimary);
+	if (persist && appearanceSettings != nullptr)
+	{
+		appearanceSettings->setValue("theme", themeIndex);
+		appearanceSettings->saveIfNeeded();
+	}
 	setColourScheme(
-		{ background, surface, surfaceRaised, outline, textPrimary,
-			accent, textPrimary, accent, textPrimary });
+		{ palette.background, palette.surface, palette.surfaceRaised, palette.outline, palette.textPrimary,
+			palette.accent, palette.textPrimary, palette.accent, palette.textPrimary });
 
-	setColour(Label::textColourId, textPrimary);
-	setColour(TextButton::buttonColourId, surfaceRaised);
-	setColour(TextButton::buttonOnColourId, accent.darker(0.25f));
-	setColour(TextButton::textColourOffId, textPrimary);
-	setColour(TextButton::textColourOnId, Colours::white);
-	setColour(ComboBox::backgroundColourId, surfaceRaised);
-	setColour(ComboBox::textColourId, textPrimary);
-	setColour(ComboBox::outlineColourId, outline);
-	setColour(ComboBox::arrowColourId, accentBright);
-	setColour(Slider::textBoxTextColourId, textPrimary);
-	setColour(Slider::textBoxBackgroundColourId, surface);
+	setColour(Label::textColourId, palette.textPrimary);
+	setColour(TextButton::buttonColourId, palette.surfaceRaised);
+	setColour(TextButton::buttonOnColourId, palette.accent);
+	setColour(TextButton::textColourOffId, palette.textPrimary);
+	setColour(TextButton::textColourOnId, palette.background);
+	setColour(ComboBox::backgroundColourId, palette.surfaceRaised);
+	setColour(ComboBox::textColourId, palette.textPrimary);
+	setColour(ComboBox::outlineColourId, palette.outline);
+	setColour(ComboBox::arrowColourId, palette.accentBright);
+	setColour(Slider::textBoxTextColourId, palette.textPrimary);
+	setColour(Slider::textBoxBackgroundColourId, palette.surface);
 	setColour(Slider::textBoxOutlineColourId, Colours::transparentBlack);
-	setColour(GroupComponent::outlineColourId, outline);
-	setColour(GroupComponent::textColourId, textMuted);
-	setColour(TabbedComponent::backgroundColourId, background);
+	setColour(GroupComponent::outlineColourId, palette.outline);
+	setColour(GroupComponent::textColourId, palette.textMuted);
+	setColour(TabbedComponent::backgroundColourId, palette.background);
 	setColour(TabbedComponent::outlineColourId, Colours::transparentBlack);
-	setColour(TabbedButtonBar::tabTextColourId, textMuted);
-	setColour(TabbedButtonBar::frontTextColourId, textPrimary);
-	setColour(PopupMenu::backgroundColourId, surfaceRaised);
-	setColour(PopupMenu::textColourId, textPrimary);
-	setColour(PopupMenu::highlightedBackgroundColourId, accent.darker(0.35f));
-	setColour(PopupMenu::highlightedTextColourId, Colours::white);
-	setColour(HyperlinkButton::textColourId, accentBright);
+	setColour(TabbedButtonBar::tabTextColourId, palette.textMuted);
+	setColour(TabbedButtonBar::frontTextColourId, palette.textPrimary);
+	setColour(PopupMenu::backgroundColourId, palette.surfaceRaised);
+	setColour(PopupMenu::textColourId, palette.textPrimary);
+	setColour(PopupMenu::highlightedBackgroundColourId, palette.accent);
+	setColour(PopupMenu::highlightedTextColourId, palette.background);
+	setColour(HyperlinkButton::textColourId, palette.accentBright);
 }
 
 Font preenfmLookAndFeel::getTextButtonFont(TextButton&, int buttonHeight)
@@ -76,10 +104,10 @@ void preenfmLookAndFeel::drawButtonBackground(Graphics& g, Button& button,
 	const Colour& backgroundColour, bool isHighlighted, bool isDown)
 {
 	auto bounds = button.getLocalBounds().toFloat().reduced(0.75f);
-	auto fill = backgroundColour.isTransparent() ? surfaceRaised : backgroundColour;
+	auto fill = backgroundColour.isTransparent() ? palette.surfaceRaised : backgroundColour;
 
 	if (button.getToggleState())
-		fill = accent.darker(0.35f);
+		fill = palette.accent;
 	if (isDown)
 		fill = fill.darker(0.18f);
 	else if (isHighlighted)
@@ -87,7 +115,7 @@ void preenfmLookAndFeel::drawButtonBackground(Graphics& g, Button& button,
 
 	g.setColour(fill.withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.45f));
 	g.fillRoundedRectangle(bounds, 5.0f);
-	g.setColour((button.getToggleState() ? accentBright : outline)
+	g.setColour((button.getToggleState() ? palette.accentBright : palette.outline)
 		.withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.4f));
 	g.drawRoundedRectangle(bounds, 5.0f, button.getToggleState() ? 1.5f : 1.0f);
 }
@@ -97,8 +125,9 @@ void preenfmLookAndFeel::drawGroupComponentOutline(Graphics& g, int width, int h
 {
 	const auto bounds = Rectangle<float>(0.5f, 8.0f,
 		static_cast<float>(width) - 1.0f, static_cast<float>(height) - 8.5f);
-	const auto border = group.findColour(GroupComponent::outlineColourId);
-	g.setColour(surface.interpolatedWith(border, 0.11f));
+	const auto border = palette.outline.interpolatedWith(palette.accent, 0.12f);
+	const auto tone = static_cast<unsigned int>(group.getText().hashCode()) % 4;
+	g.setColour(palette.surface.interpolatedWith(palette.surfaceRaised, 0.12f + 0.13f * tone));
 	g.fillRoundedRectangle(bounds, 8.0f);
 	g.setColour(border);
 	g.drawRoundedRectangle(bounds, 8.0f, 1.0f);
@@ -109,9 +138,9 @@ void preenfmLookAndFeel::drawGroupComponentOutline(Graphics& g, int width, int h
 			.withMetricsKind(TypefaceMetricsKind::legacy)));
 		const auto textWidth = jmin(width - 24,
 			GlyphArrangement::getStringWidthInt(g.getCurrentFont(), label) + 14);
-		g.setColour(background);
+		g.setColour(palette.background);
 		g.fillRect(10, 0, textWidth, 18);
-		g.setColour(group.findColour(GroupComponent::textColourId));
+		g.setColour(palette.textMuted);
 		g.drawText(label, 16, 0, textWidth - 8, 18, Justification::centredLeft, true);
 	}
 }
@@ -119,11 +148,9 @@ void preenfmLookAndFeel::drawGroupComponentOutline(Graphics& g, int width, int h
 void preenfmLookAndFeel::drawTabButton(TabBarButton& button, Graphics& g,
 	bool isMouseOver, bool isMouseDown)
 {
-	static const Colour tabColours[] = {
-		Colour(0xff17323a), Colour(0xff202b46), Colour(0xff29303b)
-	};
 	auto bounds = button.getLocalBounds().toFloat().reduced(5.0f, 4.0f);
-	auto fill = tabColours[jlimit(0, 2, button.getIndex())];
+	auto fill = palette.surface.interpolatedWith(palette.surfaceRaised,
+		0.25f + 0.25f * jlimit(0, 2, button.getIndex()));
 	if (button.isFrontTab())
 		fill = fill.brighter(0.16f);
 	if (isMouseDown)
@@ -133,7 +160,7 @@ void preenfmLookAndFeel::drawTabButton(TabBarButton& button, Graphics& g,
 
 	g.setColour(fill);
 	g.fillRoundedRectangle(bounds, 6.0f);
-	g.setColour((button.isFrontTab() ? accentBright : outline).withAlpha(0.9f));
+	g.setColour((button.isFrontTab() ? palette.accentBright : palette.outline).withAlpha(0.9f));
 	g.drawRoundedRectangle(bounds, 6.0f, button.isFrontTab() ? 1.4f : 1.0f);
 
 	drawTabButtonText(button, g, isMouseOver, isMouseDown);
@@ -144,8 +171,8 @@ void preenfmLookAndFeel::drawTabButton(TabBarButton& button, Graphics& g,
 void preenfmLookAndFeel::drawRotarySlider(Graphics& g, int x, int y, int width, int height, float sliderPos,
 	const float rotaryStartAngle, const float rotaryEndAngle, Slider& slider)
 {
-	const auto track = outline;
-	const auto fill = slider.isEnabled() ? accentBright : textMuted.withAlpha(0.45f);
+	const auto track = palette.outline;
+	const auto fill = slider.isEnabled() ? palette.accentBright : palette.textMuted.withAlpha(0.45f);
 
 	const auto bounds = Rectangle<int>(x, y, width, height).toFloat().reduced(5);
 
@@ -185,7 +212,7 @@ void preenfmLookAndFeel::drawRotarySlider(Graphics& g, int x, int y, int width, 
         const juce::Point<float> thumbPoint(bounds.getCentreX() + arcRadius * std::cos(toAngle - float_Pi * 0.5f),
 			bounds.getCentreY() + arcRadius * std::sin(toAngle - float_Pi * 0.5f));
 
-		g.setColour(surfaceRaised);
+		g.setColour(palette.surfaceRaised);
 		g.fillEllipse(bounds.withSizeKeepingCentre(radius * 1.18f, radius * 1.18f));
 		g.setColour(fill);
 		g.drawLine(bounds.getCentreX(), bounds.getCentreY(), thumbPoint.getX(), thumbPoint.getY(), 2.0f);
@@ -201,8 +228,8 @@ void preenfmLookAndFeel::drawLinearSlider(Graphics& g, int x, int y, int width, 
 {
 	ignoreUnused(minSliderPos, maxSliderPos, style);
 
-	const auto track = outline;
-	const auto fill = slider.isEnabled() ? accentBright : textMuted.withAlpha(0.45f);
+	const auto track = palette.outline;
+	const auto fill = slider.isEnabled() ? palette.accentBright : palette.textMuted.withAlpha(0.45f);
 
 
 	const auto trackWidth = jmin(4.0f, slider.isHorizontal() ? height * 0.25f : width * 0.25f);

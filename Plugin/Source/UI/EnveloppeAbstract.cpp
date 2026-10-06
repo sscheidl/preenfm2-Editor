@@ -18,6 +18,7 @@
 
 
 #include "EnveloppeAbstract.h"
+#include "PreenTheme.h"
 
 #include <limits>
 
@@ -64,7 +65,7 @@ void EnveloppeAbstract::paint(Graphics& g)
 
 
 	float lineX = scaleX;
-	g.setColour(Colours::grey);
+	g.setColour(PreenTheme::colour(*this, PreenTheme::outlineId));
 	while (lineX < getWidth() - MARGIN_HORIZONTAL) {
 		g.drawVerticalLine((int)(lineX + MARGIN_HORIZONTAL), MARGIN_VERTICAL, (float)getHeight() - MARGIN_VERTICAL);
 		lineX += scaleX;
@@ -75,7 +76,7 @@ void EnveloppeAbstract::paint(Graphics& g)
 	g.drawHorizontalLine(getHeight() - MARGIN_VERTICAL, (float)MARGIN_HORIZONTAL, (float)getWidth() - MARGIN_HORIZONTAL);
 
 	// Draw main enveloppe shape
-	g.setColour(Colours::whitesmoke);
+	g.setColour(PreenTheme::colour(*this, PreenTheme::textId));
 	Path path;
 	path.startNewSubPath(pointList[0].get()->getPositionOnScreenX(),
 		pointList[0].get()->getPositionOnScreenY());
@@ -83,7 +84,7 @@ void EnveloppeAbstract::paint(Graphics& g)
 		path.lineTo(pointList[p].get()->getPositionOnScreenX(),
 			pointList[p].get()->getPositionOnScreenY());
 	}
-	g.setColour(Colours::whitesmoke);
+	g.setColour(PreenTheme::colour(*this, PreenTheme::textId));
 	g.strokePath(path, PathStrokeType(1.8f, PathStrokeType::beveled, PathStrokeType::rounded));
 
 	// Back to bottom
@@ -93,7 +94,7 @@ void EnveloppeAbstract::paint(Graphics& g)
 	// Back to first point
 	path.lineTo(pointList[0].get()->getPositionOnScreenX(),
 		pointList[0].get()->getPositionOnScreenY());
-	g.setColour(Colour(0x33bbbbbb));
+	g.setColour(PreenTheme::colour(*this, PreenTheme::accentId).withAlpha(0.15f));
 	g.fillPath(path);
 
 
@@ -101,22 +102,22 @@ void EnveloppeAbstract::paint(Graphics& g)
         if (draggingPointIndex == p || overPointIndex == p) {
 
             if (isMouseOverX() || (draggingPointIndex == p && !pointList[p].get()->isXLocked())) {
-                g.setColour(Colours::yellow);
+                g.setColour(PreenTheme::colour(*this, PreenTheme::brightId));
             }
             else {
-                g.setColour(Colours::whitesmoke);
+                g.setColour(PreenTheme::colour(*this, PreenTheme::textId));
             }
             g.drawHorizontalLine((int)pointList[p].get()->getPositionOnScreenY(), (float)MARGIN_HORIZONTAL, (float)getWidth() - MARGIN_HORIZONTAL);
 
             if (isMouseOverY() || (draggingPointIndex == p && !pointList[p].get()->isYLocked())) {
-                g.setColour(Colours::yellow);
+                g.setColour(PreenTheme::colour(*this, PreenTheme::brightId));
             }
             else {
-                g.setColour(Colours::whitesmoke);
+                g.setColour(PreenTheme::colour(*this, PreenTheme::textId));
             }
             g.drawVerticalLine((int)pointList[p].get()->getPositionOnScreenX(), (float)MARGIN_VERTICAL, (float)getHeight() - MARGIN_VERTICAL);
 
-            g.setColour(Colours::yellow);
+            g.setColour(PreenTheme::colour(*this, PreenTheme::brightId));
             if (draggingPointIndex == p) {
                 g.fillEllipse((float)pointList[p].get()->getPositionOnScreenX() - CIRCLE_RAY,
                     (float)pointList[p].get()->getPositionOnScreenY() - CIRCLE_RAY,
@@ -129,7 +130,7 @@ void EnveloppeAbstract::paint(Graphics& g)
             }
 		}
         else {
-            g.setColour(Colours::whitesmoke);
+            g.setColour(PreenTheme::colour(*this, PreenTheme::textId));
 
             g.fillEllipse((float)pointList[p].get()->getPositionOnScreenX() - 2,
                 (float)pointList[p].get()->getPositionOnScreenY() - 2,

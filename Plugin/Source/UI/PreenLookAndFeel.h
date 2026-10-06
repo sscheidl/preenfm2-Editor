@@ -20,10 +20,13 @@
 #define PREENLOOKANDFEEL_H_INCLUDED
 
 #include "JuceHeader.h"
+#include "PreenTheme.h"
 
 class preenfmLookAndFeel : public LookAndFeel_V4 {
 public:
-	preenfmLookAndFeel();
+	explicit preenfmLookAndFeel(const File& preferenceFile = {});
+	void setTheme(int index, bool persist = true);
+	int getTheme() const noexcept { return themeIndex; }
 
 	Font getTextButtonFont(TextButton&, int buttonHeight) override;
 	int getTabButtonBestWidth(TabBarButton&, int tabDepth) override;
@@ -48,8 +51,10 @@ public:
 
 	Font getComboBoxFont(ComboBox& box) override;
 	void positionComboBoxText(ComboBox& box, Label& label) override;
-
-
+private:
+	int themeIndex = 0;
+	PreenTheme::Palette palette = PreenTheme::palette(0);
+	std::unique_ptr<PropertiesFile> appearanceSettings;
 };
 
 

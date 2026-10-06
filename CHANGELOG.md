@@ -2,6 +2,18 @@
 
 This project follows semantic versioning.
 
+## 4.0.7 (pre-release)
+
+- Add locally remembered editor themes: tAUREON, Graphite Amber, Arctic, Forest
+  and Plum, plus Classic as the existing default/fallback.
+- Theme the permanent header, tabs, modules, knobs, menus, text editors,
+  envelopes and sequencers. Maintain functional operator colours; adapt IM
+  connection/label shades for the light theme. No MIDI/parameter/DAW-state changes.
+- Add offline theme rendering, contrast, minimum-size/overlap, parameter and
+  MIDI-isolation tests; refresh README screenshots with real GUI renders.
+- Windows x64 VST3/standalone beta. Hardware/Studio One testing and independent
+  review of this theme update remain pending.
+
 ## 4.0.6 (pre-release)
 
 - Opt-in saved MPE performance-channel routing; preserve note/expression channels

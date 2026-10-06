@@ -44,6 +44,7 @@
 //[/Headers]
 
 #include "PanelArpAndFilter.h"
+#include "PreenTheme.h"
 
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
@@ -119,8 +120,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
                                                  TRANS("Arpeggiator")));
     addAndMakeVisible (arpGroupComponent.get());
     arpGroupComponent->setTextLabelPosition (Justification::centredLeft);
-    arpGroupComponent->setColour (GroupComponent::outlineColourId, Colour (0xff526a7c));
-    arpGroupComponent->setColour (GroupComponent::textColourId, Colour (0xff86a0b3));
 
     arpBPM.reset (new Slider ("Arp bpm"));
     addAndMakeVisible (arpBPM.get());
@@ -137,7 +136,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
                                   .withTypefaceStyle ("Regular"));
     arpBPMLabel->setJustificationType (Justification::centredTop);
     arpBPMLabel->setEditable (false, false, false);
-    arpBPMLabel->setColour (TextEditor::textColourId, Colours::black);
     arpBPMLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
     arpDirectionLabel.reset (new Label ("arp direction label",
@@ -148,7 +146,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
                                         .withTypefaceStyle ("Regular"));
     arpDirectionLabel->setJustificationType (Justification::centredTop);
     arpDirectionLabel->setEditable (false, false, false);
-    arpDirectionLabel->setColour (TextEditor::textColourId, Colours::black);
     arpDirectionLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
     arpOctaveLabel.reset (new Label ("arp octave label",
@@ -159,7 +156,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
                                      .withTypefaceStyle ("Regular"));
     arpOctaveLabel->setJustificationType (Justification::centredTop);
     arpOctaveLabel->setEditable (false, false, false);
-    arpOctaveLabel->setColour (TextEditor::textColourId, Colours::black);
     arpOctaveLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
     arpPatternLabel.reset (new Label ("arp pattern label",
@@ -170,7 +166,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
                                       .withTypefaceStyle ("Regular"));
     arpPatternLabel->setJustificationType (Justification::centredTop);
     arpPatternLabel->setEditable (false, false, false);
-    arpPatternLabel->setColour (TextEditor::textColourId, Colours::black);
     arpPatternLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
     arpDivisionLabel.reset (new Label ("arp division label",
@@ -181,7 +176,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
                                        .withTypefaceStyle ("Regular"));
     arpDivisionLabel->setJustificationType (Justification::centredTop);
     arpDivisionLabel->setEditable (false, false, false);
-    arpDivisionLabel->setColour (TextEditor::textColourId, Colours::black);
     arpDivisionLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
     arpDurationLabel.reset (new Label ("arp Duration label",
@@ -192,7 +186,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
                                        .withTypefaceStyle ("Regular"));
     arpDurationLabel->setJustificationType (Justification::centredTop);
     arpDurationLabel->setEditable (false, false, false);
-    arpDurationLabel->setColour (TextEditor::textColourId, Colours::black);
     arpDurationLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
     arpLatchLabel.reset (new Label ("arp Latch label",
@@ -203,7 +196,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
                                     .withTypefaceStyle ("Regular"));
     arpLatchLabel->setJustificationType (Justification::centredTop);
     arpLatchLabel->setEditable (false, false, false);
-    arpLatchLabel->setColour (TextEditor::textColourId, Colours::black);
     arpLatchLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
     arpDirectionCombo.reset (new ComboBox ("Arp direction"));
@@ -333,8 +325,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
                                                     TRANS("Filter")));
     addAndMakeVisible (filterGroupComponent.get());
     filterGroupComponent->setTextLabelPosition (Justification::centredLeft);
-    filterGroupComponent->setColour (GroupComponent::outlineColourId, Colour (0xff35aeb4));
-    filterGroupComponent->setColour (GroupComponent::textColourId, Colour (0xff69cdd1));
 
     filterParam1Label.reset (new Label ("filter param1 label",
                                         TRANS("Param1")));
@@ -344,7 +334,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
                                         .withTypefaceStyle ("Regular"));
     filterParam1Label->setJustificationType (Justification::centredTop);
     filterParam1Label->setEditable (false, false, false);
-    filterParam1Label->setColour (TextEditor::textColourId, Colours::black);
     filterParam1Label->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
     filterParam1Slider.reset (new Slider ("Filter param1"));
@@ -362,7 +351,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
                                         .withTypefaceStyle ("Regular"));
     filterParam2Label->setJustificationType (Justification::centredTop);
     filterParam2Label->setEditable (false, false, false);
-    filterParam2Label->setColour (TextEditor::textColourId, Colours::black);
     filterParam2Label->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
     filterParam2Slider.reset (new Slider ("Filter param2"));
@@ -380,7 +368,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
                                       .withTypefaceStyle ("Regular"));
     filterGainLabel->setJustificationType (Justification::centredTop);
     filterGainLabel->setEditable (false, false, false);
-    filterGainLabel->setColour (TextEditor::textColourId, Colours::black);
     filterGainLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
     filterGainSlider.reset (new Slider ("Filter gain"));
@@ -410,7 +397,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
                                  .withTypefaceStyle ("Regular"));
     clockLabel->setJustificationType (Justification::centredLeft);
     clockLabel->setEditable (false, false, false);
-    clockLabel->setColour (TextEditor::textColourId, Colours::black);
     clockLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
     filterComboBox.reset (new ComboBox ("Filter type"));
@@ -430,10 +416,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
 
     for (int n = 0; n < 2; n++) {
         addAndMakeVisible((noteGroupComponent[n] = std::make_unique<GroupComponent>("Note group" + String(n + 1), TRANS("Note" + String(n + 1) + " Scaling"))).get());
-        const Colour noteColour = n == 0 ? Colour(0xff7383c5) : Colour(0xff8a7654);
-        noteGroupComponent[n]->setColour(GroupComponent::textColourId,
-            n == 0 ? Colour(0xff9da9e0) : Colour(0xffc7ad79));
-        noteGroupComponent[n]->setColour(GroupComponent::outlineColourId, noteColour);
         noteGroupComponent[n]->setTextLabelPosition(Justification::centredLeft);
 
         addAndMakeVisible((noteBeforeLabel[n] = std::make_unique<Label>("Note" + String(n + 1) + " before label ", "Before")).get());
@@ -441,7 +423,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
         addAndMakeVisible((noteBefore[n] = std::make_unique<ComboBox>("Note" + String(n + 1) + " before")).get());
         noteBefore[n]->setEditableText(false);
         noteBefore[n]->setJustificationType(Justification::centred);
-        noteBefore[n]->setColour(ComboBox::buttonColourId, Colours::blue);
         noteBefore[n]->addItem("Flat", 1);
         noteBefore[n]->addItem("+Linear", 2);
         noteBefore[n]->addItem("+Linear*8", 3);
@@ -468,7 +449,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
         addAndMakeVisible((noteAfter[n] = std::make_unique<ComboBox>("Note" + String(n + 1) + " after")).get());
         noteAfter[n]->setEditableText(false);
         noteAfter[n]->setJustificationType(Justification::left);
-        noteAfter[n]->setColour(ComboBox::buttonColourId, Colours::blue);
         noteAfter[n]->addItem("Flat", 1);
         noteAfter[n]->addItem("+Linear", 2);
         noteAfter[n]->addItem("+Linear*8", 3);
@@ -506,11 +486,6 @@ PanelArpAndFilter::PanelArpAndFilter ()
 	arpDurationCombo->setSelectedId(1);
 	arpLatchCombo->setSelectedId(1);
 
-	arpDirectionCombo->setColour(ComboBox::buttonColourId, Colours::blue);
-	arpPatternCombo->setColour(ComboBox::buttonColourId, Colours::blue);
-	arpDivisionCombo->setColour(ComboBox::buttonColourId, Colours::blue);
-	arpDurationCombo->setColour(ComboBox::buttonColourId, Colours::blue);
-	arpLatchCombo->setColour(ComboBox::buttonColourId, Colours::blue);
 
 
 
@@ -559,7 +534,7 @@ void PanelArpAndFilter::paint (Graphics& g)
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    g.fillAll (Colour (0xff0f1720));
+    g.fillAll (PreenTheme::colour(*this, PreenTheme::backgroundId));
 
     //[UserPaint] Add your own custom painting code here..
     //[/UserPaint]

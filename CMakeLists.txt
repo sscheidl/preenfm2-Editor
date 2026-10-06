@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(PreenfmEditor
-    VERSION 4.0.6
+    VERSION 4.0.7
     DESCRIPTION "MIDI editor for the preenfm2 and preenfm3 synthesizers"
     LANGUAGES C CXX)
 
@@ -84,6 +84,7 @@ target_sources(PreenfmEditor PRIVATE
     Plugin/Source/UI/PanelOfComponents.h
     Plugin/Source/UI/PreenLookAndFeel.cpp
     Plugin/Source/UI/PreenLookAndFeel.h
+    Plugin/Source/UI/PreenTheme.h
     Plugin/Source/UI/SliderPfm2.h
     Plugin/Source/UI/StepSequencer.cpp
     Plugin/Source/UI/StepSequencer.h
@@ -138,3 +139,11 @@ target_include_directories(MpeProcessorTests PRIVATE $<TARGET_PROPERTY:PreenfmEd
 target_compile_definitions(MpeProcessorTests PRIVATE $<TARGET_PROPERTY:PreenfmEditor,COMPILE_DEFINITIONS>)
 add_dependencies(MpeProcessorTests PreenfmEditor)
 add_test(NAME MpeProcessorTests COMMAND MpeProcessorTests)
+
+add_executable(ThemeTests EXCLUDE_FROM_ALL Plugin/Tests/ThemeTests.cpp)
+target_compile_features(ThemeTests PRIVATE cxx_std_17)
+target_link_libraries(ThemeTests PRIVATE PreenfmEditor)
+target_include_directories(ThemeTests PRIVATE $<TARGET_PROPERTY:PreenfmEditor,INCLUDE_DIRECTORIES>)
+target_compile_definitions(ThemeTests PRIVATE $<TARGET_PROPERTY:PreenfmEditor,COMPILE_DEFINITIONS>)
+add_dependencies(ThemeTests PreenfmEditor)
+add_test(NAME ThemeTests COMMAND ThemeTests)

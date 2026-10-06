@@ -42,6 +42,7 @@
 //[/Headers]
 
 #include "PanelEngine.h"
+#include "PreenTheme.h"
 
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
@@ -171,6 +172,13 @@ const Colour modulationConnectionColours[] = {
 	Colour(0xffff7aa8), Colour(0xff8fd46a), Colour(0xff67a7ff)
 };
 
+Colour modulationColour(const Component& component, int index)
+{
+	const auto base = modulationConnectionColours[jlimit(0, 5, index)];
+	return PreenTheme::colour(component, PreenTheme::backgroundId).getBrightness() > 0.6f
+		? base.darker(0.65f) : base;
+}
+
 class UnifiedAlgorithmDiagram final : public Component
 {
 public:
@@ -189,7 +197,7 @@ public:
 		const Colour carrierOutline(0xff5edbe0);
 		const Colour modulatorFill(0xff463064);
 		const Colour modulatorOutline(0xffb482ff);
-		const Colour syncConnection(0xffc29aff);
+		const auto syncConnection = PreenTheme::colour(*this, PreenTheme::textId);
 		const Colour textColour(0xffedf4f7);
 
 		if (isVosim)
@@ -262,8 +270,7 @@ public:
 		{
 			const auto source = centres[edge.source - 1];
 			const auto destination = centres[edge.destination - 1];
-			const auto connectionColour = modulationConnectionColours[
-				jlimit(0, 5, edge.index - 1)];
+			const auto connectionColour = modulationColour(*this, edge.index - 1);
 			g.setColour(connectionColour);
 
 			if (edge.source == edge.destination)
@@ -352,22 +359,16 @@ PanelEngine::PanelEngine ()
                                                    juce::String()));
     addAndMakeVisible (operatorGroup.get());
     operatorGroup->setTextLabelPosition (juce::Justification::centredLeft);
-    operatorGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff526a7c));
-    operatorGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff749fad));
 
     mixerGroup.reset (new juce::GroupComponent ("mixer group",
                                                 TRANS("Mixer")));
     addAndMakeVisible (mixerGroup.get());
     mixerGroup->setTextLabelPosition (juce::Justification::centredLeft);
-    mixerGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff35aeb4));
-    mixerGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff69cdd1));
 
     imGroup.reset (new juce::GroupComponent ("IM group",
                                              TRANS("Modulation indexes")));
     addAndMakeVisible (imGroup.get());
     imGroup->setTextLabelPosition (juce::Justification::centredLeft);
-    imGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff7383c5));
-    imGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff9da9e0));
 
 
     //[UserPreSize]
@@ -384,7 +385,6 @@ PanelEngine::PanelEngine ()
 		panKnob[k]->setRange(-1, 1, .01f);
 		panKnob[k]->setSliderStyle(Slider::LinearHorizontal);
 		panKnob[k]->setTextBoxStyle(Slider::NoTextBox, false, 40, 20);
-		panKnob[k]->setColour(Slider::thumbColourId, Colours::blue);
 		panKnob[k]->setDoubleClickReturnValue(true, 0.0f);
 		panKnob[k]->addListener(this);
 
@@ -398,8 +398,7 @@ PanelEngine::PanelEngine ()
 		} else {
 			addAndMakeVisible((IMNumber[k] = std::make_unique<Label>("IM Label" + String(k + 1), String("Feedback"))).get());
 		}
-		IMNumber[k]->setColour(Label::textColourId,
-			modulationConnectionColours[jlimit(0, 5, k)]);
+		IMNumber[k]->setColour(Label::textColourId, modulationColour(*this, k));
 
 		addAndMakeVisible((IMKnob[k] = std::make_unique<SliderPfm2>("IM " + String(k + 1))).get());
 		IMKnob[k]->setRange(0, k < (NUMBER_OF_IM - 1) ? 16 : 1, .01f);
@@ -425,12 +424,8 @@ PanelEngine::PanelEngine ()
 	IMVelocityLabel->setJustificationType(Justification::centredTop);
 
 	addAndMakeVisible((envCopyButton = std::make_unique<TextButton>("Copy")).get());
-	envCopyButton->setColour(TextButton::buttonColourId, Colour::fromRGBA(150, 150, 150, 50));
-	envCopyButton->setColour(TextButton::buttonOnColourId, Colour::fromRGBA(150, 150, 150, 150));
 	envCopyButton->addListener(this);
 	addAndMakeVisible((envPasteButton = std::make_unique<TextButton>("Paste")).get());
-	envPasteButton->setColour(TextButton::buttonColourId, Colour::fromRGBA(150, 150, 150, 50));
-	envPasteButton->setColour(TextButton::buttonOnColourId, Colour::fromRGBA(150, 150, 150, 150));
 	envPasteButton->addListener(this);
 
 
@@ -449,7 +444,6 @@ PanelEngine::PanelEngine ()
 
 		opShape[k] = std::make_unique<ComboBox>("Op" + String(k + 1) + " Shape");
 		opShape[k]->setJustificationType(Justification::centred);
-		opShape[k]->setColour(ComboBox::buttonColourId, Colours::blue);
 		opShape[k]->addItem("Off", 8);
 		opShape[k]->addItem("Sin", 1);
 		opShape[k]->addItem("Saw", 2);
@@ -472,7 +466,6 @@ PanelEngine::PanelEngine ()
 		opFrequencyType[k] = std::make_unique<ComboBox>("Op" + String(k + 1) + " Freq Type");
 		opFrequencyType[k]->setEditableText(false);
 		opFrequencyType[k]->setJustificationType(Justification::centred);
-		opFrequencyType[k]->setColour(ComboBox::buttonColourId, Colours::blue);
 		opFrequencyType[k]->addItem("Keyboard", 1);
 		opFrequencyType[k]->addItem("Fine tune Hertz", 3);
 		opFrequencyType[k]->addItem("Fixed", 2);
@@ -569,7 +562,6 @@ PanelEngine::PanelEngine ()
 
 	playModePfm3 = std::make_unique<ComboBox>("Play Mode pfm3");
 	playModePfm3->setJustificationType(Justification::centred);
-	playModePfm3->setColour(ComboBox::buttonColourId, Colours::blue);
 	playModePfm3->addItem("Mono", 1);
 	playModePfm3->addItem("Poly", 2);
 	playModePfm3->addItem("Unison", 3);
@@ -581,7 +573,6 @@ PanelEngine::PanelEngine ()
 
 	playModePfm2 = std::make_unique<ComboBox>("Play Mode pfm2");
 	playModePfm2->setJustificationType(Justification::centred);
-	playModePfm2->setColour(ComboBox::buttonColourId, Colours::blue);
 	playModePfm2->addItem("Poly", 1);
 	playModePfm2->addItem("Unison", 2);
 	playModePfm2->setSelectedId(1);
@@ -607,7 +598,6 @@ PanelEngine::PanelEngine ()
 
 	glideType = std::make_unique<ComboBox>("Glide Type");
 	glideType->setJustificationType(Justification::centred);
-	glideType->setColour(ComboBox::buttonColourId, Colours::blue);
 	glideType->addItem("Off", 1);
 	glideType->addItem("Overlap", 2);
 	glideType->addItem("Always", 3);
@@ -672,7 +662,7 @@ void PanelEngine::paint (juce::Graphics& g)
 
     //[/UserPrePaint]
 
-    g.fillAll (juce::Colour (0xff0b1117));
+    g.fillAll (PreenTheme::colour(*this, PreenTheme::backgroundId));
 
 	const auto drawModule = [&g](Rectangle<float> bounds, Colour fill, Colour border)
 	{
@@ -686,16 +676,23 @@ void PanelEngine::paint (juce::Graphics& g)
 		static_cast<float>(proportionOfHeight(0.006f)),
 		static_cast<float>(proportionOfWidth(0.405f)),
 		static_cast<float>(proportionOfHeight(0.305f)) },
-		Colour(0xff102630), Colour(0xff315d69));
+		PreenTheme::colour(*this, PreenTheme::surfaceId), PreenTheme::colour(*this, PreenTheme::outlineId));
 
 	drawModule({ static_cast<float>(proportionOfWidth(0.418f)),
 		static_cast<float>(proportionOfHeight(0.006f)),
 		static_cast<float>(proportionOfWidth(0.185f)),
 		static_cast<float>(proportionOfHeight(0.305f)) },
-		Colour(0xff111e2b), Colour(0xff344b60));
+		PreenTheme::colour(*this, PreenTheme::raisedId).interpolatedWith(PreenTheme::colour(*this, PreenTheme::surfaceId), 0.65f), PreenTheme::colour(*this, PreenTheme::outlineId));
 
     //[UserPaint] Add your own custom painting code here..
     //[/UserPaint]
+}
+
+void PanelEngine::lookAndFeelChanged()
+{
+	for (int index = 0; index < NUMBER_OF_IM; ++index)
+		if (IMNumber[index] != nullptr)
+			IMNumber[index]->setColour(Label::textColourId, modulationColour(*this, index));
 }
 
 void PanelEngine::resized()

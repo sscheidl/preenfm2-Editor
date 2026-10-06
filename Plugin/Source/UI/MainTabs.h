@@ -81,6 +81,7 @@ public:
 
     void paint (Graphics& g) override;
     void resized() override;
+    void lookAndFeelChanged() override;
     void buttonClicked (Button* buttonThatWasClicked) override;
     void labelTextChanged (Label* labelThatHasChanged) override;
     void comboBoxChanged (ComboBox* comboBoxThatHasChanged) override;

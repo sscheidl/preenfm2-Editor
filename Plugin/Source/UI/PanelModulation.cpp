@@ -43,6 +43,7 @@
 //[/Headers]
 
 #include "PanelModulation.h"
+#include "PreenTheme.h"
 
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
@@ -162,32 +163,22 @@ PanelModulation::PanelModulation ()
     matrixGroup.reset (new juce::GroupComponent ("matrix group",
                                                  TRANS("Matrix")));
     addAndMakeVisible (matrixGroup.get());
-    matrixGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff7383c5));
-    matrixGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff9da9e0));
 
     lfoGroup.reset (new juce::GroupComponent ("lfo group",
                                               juce::String()));
     addAndMakeVisible (lfoGroup.get());
-    lfoGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff35aeb4));
-    lfoGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff69cdd1));
 
     env1Group.reset (new juce::GroupComponent ("env 1 group",
                                                TRANS("Free Enveloppe 1")));
     addAndMakeVisible (env1Group.get());
-    env1Group->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff526a7c));
-    env1Group->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff86a0b3));
 
     env2Group.reset (new juce::GroupComponent ("env 2 group",
                                                TRANS("Free Enveloppe 2")));
     addAndMakeVisible (env2Group.get());
-    env2Group->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff62739d));
-    env2Group->setColour (juce::GroupComponent::textColourId, juce::Colour (0xff95a4cc));
 
     stepSeqGroup.reset (new juce::GroupComponent ("step sequencer group",
                                                   juce::String()));
     addAndMakeVisible (stepSeqGroup.get());
-    stepSeqGroup->setColour (juce::GroupComponent::outlineColourId, juce::Colour (0xff8a7654));
-    stepSeqGroup->setColour (juce::GroupComponent::textColourId, juce::Colour (0xffc7ad79));
 
 
     //[UserPreSize]
@@ -204,7 +195,6 @@ PanelModulation::PanelModulation ()
 		addAndMakeVisible((lfoShape[k] = std::make_unique<ComboBox>("LFO" + String(k + 1) + " Shape")).get());
 		lfoShape[k]->setEditableText(false);
 		lfoShape[k]->setJustificationType(Justification::left);
-		lfoShape[k]->setColour(ComboBox::buttonColourId, Colours::blue);
 		lfoShape[k]->addItem("Sin", 1);
 		lfoShape[k]->addItem("Saw", 2);
 		lfoShape[k]->addItem("Triangle", 3);
@@ -229,7 +219,6 @@ PanelModulation::PanelModulation ()
 		addAndMakeVisible((lfoExtMidiSync[k] = std::make_unique<ComboBox>("LFO" + String(k + 1) + " External Sync")).get());
 		lfoExtMidiSync[k]->setEditableText(false);
 		lfoExtMidiSync[k]->setJustificationType(Justification::left);
-		lfoExtMidiSync[k]->setColour(ComboBox::buttonColourId, Colours::blue);
 		lfoExtMidiSync[k]->addItem("Internal", 9990);
 		lfoExtMidiSync[k]->addItem("MC/16", 10000);
 		lfoExtMidiSync[k]->addItem("MC/8", 10010);
@@ -271,7 +260,6 @@ PanelModulation::PanelModulation ()
 		addAndMakeVisible((lfoKsynOnOff[k] = std::make_unique<ComboBox>("LFO" + String(k + 1) + " KeySync")).get());
 		lfoKsynOnOff[k]->setEditableText(false);
 		lfoKsynOnOff[k]->setJustificationType(Justification::left);
-		lfoKsynOnOff[k]->setColour(ComboBox::buttonColourId, Colours::blue);
 		lfoKsynOnOff[k]->addItem("Off", 1);
 		lfoKsynOnOff[k]->addItem("On", 2);
 		lfoKsynOnOff[k]->setScrollWheelEnabled(true);
@@ -298,7 +286,6 @@ PanelModulation::PanelModulation ()
 	for (int k = 0; k < NUMBER_OF_STEP_SEQ; k++) {
 		addAndMakeVisible((stepSeqExtMidiSync[k] = std::make_unique<ComboBox>("Step Seq " + String(k + 1) + " External Sync")).get());
 		stepSeqExtMidiSync[k]->setEditableText(false);
-		stepSeqExtMidiSync[k]->setColour(ComboBox::buttonColourId, Colours::blue);
 		stepSeqExtMidiSync[k]->setJustificationType(Justification::left);
 		stepSeqExtMidiSync[k]->addItem("Internal", 240);
 		stepSeqExtMidiSync[k]->addItem("MC/4", 241);
@@ -364,7 +351,6 @@ PanelModulation::PanelModulation ()
 		addAndMakeVisible((matrixSource[r] = std::make_unique<ComboBox>("Mtx" + String(r + 1) + " Source")).get());
 		matrixSource[r]->setEditableText(false);
 		matrixSource[r]->setJustificationType(Justification::centred);
-		matrixSource[r]->setColour(ComboBox::buttonColourId, Colours::blue);
 		for (int i = 0; sourcesNameAndId[i].name != ""; i++) {
 			if (sourcesNameAndId[i].preenfmTarget == 0 || sourcesNameAndId[i].preenfmTarget == PROPERTY_PREENFM2) {
 				matrixSource[r]->addItem(sourcesNameAndId[i].name, (sourcesNameAndId[i].id + 1));
@@ -377,7 +363,6 @@ PanelModulation::PanelModulation ()
 		addAndMakeVisible((matrixDestination1[r] = std::make_unique<ComboBox>("Mtx" + String(r + 1) + " Destination1")).get());
 		matrixDestination1[r]->setEditableText(false);
 		matrixDestination1[r]->setJustificationType(Justification::centred);
-		matrixDestination1[r]->setColour(ComboBox::buttonColourId, Colours::blue);
 		for (int i = 0; destNameAndId[i].name != ""; i++) {
 			if (destNameAndId[i].preenfmTarget == 0 || destNameAndId[i].preenfmTarget == PROPERTY_PREENFM2) {
 				matrixDestination1[r]->addItem(destNameAndId[i].name, (destNameAndId[i].id + 1));
@@ -390,7 +375,6 @@ PanelModulation::PanelModulation ()
         addAndMakeVisible((matrixDestination2[r] = std::make_unique<ComboBox>("Mtx" + String(r + 1) + " Destination2")).get());
         matrixDestination2[r]->setEditableText(false);
         matrixDestination2[r]->setJustificationType(Justification::centred);
-        matrixDestination2[r]->setColour(ComboBox::buttonColourId, Colours::blue);
         for (int i = 0; destNameAndId[i].name != ""; i++) {
 			if (destNameAndId[i].preenfmTarget == 0 || destNameAndId[i].preenfmTarget == PROPERTY_PREENFM2) {
 				matrixDestination2[r]->addItem(destNameAndId[i].name, (destNameAndId[i].id + 1));
@@ -450,7 +434,7 @@ void PanelModulation::paint (juce::Graphics& g)
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    g.fillAll (juce::Colour (0xff0d1620));
+    g.fillAll (PreenTheme::colour(*this, PreenTheme::backgroundId));
 
     //[UserPaint] Add your own custom painting code here..
     //[/UserPaint]

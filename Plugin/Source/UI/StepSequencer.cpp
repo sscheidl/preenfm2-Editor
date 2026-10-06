@@ -18,6 +18,7 @@
 
 
 #include "StepSequencer.h"
+#include "PreenTheme.h"
 
 //==============================================================================
 StepSequencer::StepSequencer(int numberOfValues, int maxValue)
@@ -51,19 +52,19 @@ void StepSequencer::paint(Graphics& g)
 	for (int k = 0; k < numberOfValues; k++) {
 		float height = (float)getHeight() * values[k] / maxValue;
 		uint8 alpha = (uint8)(100.0f + height * 70.0f / getHeight());
-		g.setColour(Colour::fromRGBA(180, 200, 220, alpha));
+		g.setColour(PreenTheme::colour(*this, PreenTheme::accentId).withAlpha(static_cast<float>(alpha) / 255.0f));
 		g.fillRect((float)k * width, (float)getHeight() - height, width, height);
 	}
 
 	for (int k = 0; k < numberOfValues; k++) {
-		g.setColour(Colours::grey);
+		g.setColour(PreenTheme::colour(*this, PreenTheme::outlineId));
 		g.drawVerticalLine((int)(width * (1.0f + k)), 0.0f, (float)getHeight());
 
-		g.setColour(Colours::whitesmoke);
+		g.setColour(PreenTheme::colour(*this, PreenTheme::textId));
 		g.drawText(String(values[k]), (int)(k * width), getHeight() - 20, (int)width, 10, Justification::centred, true);
 	}
 
-	g.setColour(Colours::grey);
+	g.setColour(PreenTheme::colour(*this, PreenTheme::outlineId));
 	g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
 }
 

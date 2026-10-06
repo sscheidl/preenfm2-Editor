@@ -18,6 +18,7 @@
 
 #include "JuceHeader.h"
 #include "Enveloppe.h"
+#include "PreenTheme.h"
 
 
  //==============================================================================
@@ -65,22 +66,22 @@ void Enveloppe::paint(Graphics& g)
 	static const String adsr[] = { "A", "D", "S", "R" };
 	for (int v = 0; v < 4; v++) {
 		int moveReleaseY = ((v == 3 && operatorType == 2) ? 20 : 0);
-		g.setColour(Colours::whitesmoke);
+		g.setColour(PreenTheme::colour(*this, PreenTheme::textId));
 		g.drawText(adsr[v], getWidth() - RIGHT_TEXT_SIZE, 20 + v * 20 + moveReleaseY, 50, 10, Justification::centred, true);
 
         if (overPointIndex == v + 1 && isMouseOverX()) {
-			g.setColour(Colours::yellow);
+			g.setColour(PreenTheme::colour(*this, PreenTheme::brightId));
 		}
 		else {
-			g.setColour(Colours::whitesmoke);
+			g.setColour(PreenTheme::colour(*this, PreenTheme::textId));
 		}
 		String posisionX = String(pointList[v + 1].get()->getX(), 2);
 		g.drawText(posisionX, getWidth() - RIGHT_TEXT_SIZE / 3 * 2 - 10, 20 + v * 20 + moveReleaseY, 50, 10, Justification::centred, true);
         if (overPointIndex == v + 1 && !isMouseOverX()) {
-            g.setColour(Colours::yellow);
+            g.setColour(PreenTheme::colour(*this, PreenTheme::brightId));
         }
         else {
-            g.setColour(Colours::whitesmoke);
+            g.setColour(PreenTheme::colour(*this, PreenTheme::textId));
         }
         posisionX = String(pointList[v + 1].get()->getY(), 2);
 		g.drawText(posisionX, getWidth() - RIGHT_TEXT_SIZE / 3 - 10, 20 + v * 20 + moveReleaseY, 50, 10, Justification::centred, true);

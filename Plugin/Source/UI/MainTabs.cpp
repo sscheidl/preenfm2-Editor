@@ -40,6 +40,7 @@
 #include "PanelEngine.h"
 #include "PanelModulation.h"
 #include "PanelArpAndFilter.h"
+#include "PreenLookAndFeel.h"
 //[/Headers]
 
 #include "MainTabs.h"
@@ -122,12 +123,30 @@ public:
         mpeToggle.onClick = [this] { processor.setMpeEnabled(mpeToggle.getToggleState()); };
         addAndMakeVisible(mpeToggle);
 
+        themeCombo.setName("Editor theme");
+        themeCombo.setTooltip("Local editor colour theme. Does not change patches or MIDI.");
+        for (int index = 0; index < PreenTheme::count; ++index)
+            themeCombo.addItem(PreenTheme::names[static_cast<size_t>(index)], index + 1);
+        themeCombo.onChange = [this]
+        {
+            if (auto* look = dynamic_cast<preenfmLookAndFeel*>(&getLookAndFeel()))
+            {
+                look->setTheme(themeCombo.getSelectedId() - 1);
+                auto* root = findParentComponentOfClass<AudioProcessorEditor>();
+                if (root != nullptr)
+                {
+                    root->sendLookAndFeelChange();
+                    root->repaint();
+                }
+            }
+        };
+        addAndMakeVisible(themeCombo);
+
         configureInfo(targetInfoLabel);
         configureInfo(positionInfoLabel);
         configureInfo(protocolInfoLabel);
         configureInfo(operationLabel);
         // Running operation or last error, kept visually distinct.
-        operationLabel.setColour(Label::textColourId, Colour(0xffffc46b));
         operationLabel.setJustificationType(Justification::topLeft);
 
         refreshFromProcessor();
@@ -143,10 +162,18 @@ public:
 
     void paint(Graphics& g) override
     {
-        g.fillAll(Colour(0xff101c25));
-        g.setColour(Colour(0xff29404f));
+        g.fillAll(PreenTheme::colour(*this, PreenTheme::surfaceId));
+        g.setColour(PreenTheme::colour(*this, PreenTheme::outlineId));
         g.drawHorizontalLine(getHeight() - 1, 0.0f,
             static_cast<float>(getWidth()));
+    }
+
+    void lookAndFeelChanged() override
+    {
+        if (auto* look = dynamic_cast<preenfmLookAndFeel*>(&getLookAndFeel()))
+            themeCombo.setSelectedId(look->getTheme() + 1, dontSendNotification);
+        operationLabel.setColour(Label::textColourId,
+            PreenTheme::colour(*this, PreenTheme::warningId));
     }
 
     void resized() override
@@ -176,6 +203,7 @@ public:
         x += 58 + gap;
         positionButton.setBounds(x, 5, 72, controlHeight);
         mpeToggle.setBounds(x + 84, 5, 82, controlHeight);
+        themeCombo.setBounds(getWidth() - margin - 124, 5, 124, controlHeight);
 
         const int secondRowY = 34;
         const int available = getWidth() - margin * 2;
@@ -205,7 +233,6 @@ private:
     {
         label.setJustificationType(Justification::centredLeft);
         label.setMinimumHorizontalScale(0.75f);
-        label.setColour(Label::textColourId, Colour(0xffd6e4ec));
         addAndMakeVisible(label);
     }
 
@@ -336,6 +363,7 @@ private:
     TextButton storeButton;
     TextButton positionButton;
     ToggleButton mpeToggle;
+    ComboBox themeCombo;
     uint64_t lastSuppressedConfigurationCount = 0;
     int lastSeenRevision = -1;
 };
@@ -372,10 +400,7 @@ MainTabs::MainTabs ()
                                       .withTypefaceStyle ("Bold"));
     presetNameLabel->setJustificationType (Justification::centredLeft);
     presetNameLabel->setEditable (true, true, false);
-    presetNameLabel->setColour (Label::textColourId, Colours::aliceblue);
-    presetNameLabel->setColour (TextEditor::textColourId, Colours::aliceblue);
     presetNameLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
-    presetNameLabel->setColour (TextEditor::highlightColourId, Colours::coral);
     presetNameLabel->addListener (this);
 
     presetNameLabel->setBounds (366, 8, 183, 24);
@@ -488,10 +513,18 @@ void MainTabs::paint (Graphics& g)
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    g.fillAll (Colour (0xff0b1117));
+    g.fillAll (PreenTheme::colour(*this, PreenTheme::backgroundId));
 
     //[UserPaint] Add your own custom painting code here..
     //[/UserPaint]
+}
+
+void MainTabs::lookAndFeelChanged()
+{
+    if (tabbedComponent != nullptr)
+        for (int index = 0; index < tabbedComponent->getNumTabs(); ++index)
+            tabbedComponent->setTabBackgroundColour(index,
+                PreenTheme::colour(*this, PreenTheme::backgroundId));
 }
 
 void MainTabs::resized()

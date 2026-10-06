@@ -29,6 +29,7 @@ Pfm2AudioProcessorEditor::Pfm2AudioProcessorEditor(Pfm2AudioProcessor* ownerFilt
 	setLookAndFeel(ownerFilter->getEditorLookAndFeel());
 	addAndMakeVisible(mainTabs = new MainTabs());
 	mainTabs->buildParameters(getAudioProcessor());
+	sendLookAndFeelChange();
 	setResizable(true, true);
 	setResizeLimits(minimumWidth, minimumHeight, 4096, 4096);
 	// This is where our plugin's editor size is set.

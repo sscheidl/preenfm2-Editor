@@ -13,9 +13,9 @@ The PreenFM2 test unit running the hardware-tested 3.00-alpha developer firmware
 
 ## Current features
 
-**Latest pre-release: [4.0.6 Beta 1](https://github.com/sscheidl/preenfm2-Editor/releases/tag/v4.0.6-beta.1).**
-Adds opt-in MPE performance-channel routing and fixes from the independent 4.0.5
-prototype review. The new binaries are locally tested, but their hardware and
+**Latest pre-release: [4.0.7 Beta 1](https://github.com/sscheidl/preenfm2-Editor/releases/tag/v4.0.7-beta.1).**
+Adds six selectable editor colour themes to the guarded MPE routing and review
+fixes from 4.0.6. The new binaries are locally tested, but their hardware and
 Studio One validation is still pending. The older 4.0.4 beta's successful tests
 do not constitute validation of this MPE extension.
 
@@ -27,6 +27,8 @@ and CVIN firmware matrix layouts are not supported. See the
 
 - complete Engine, Modulation, Arpeggiator, Filter and Note Scaling editing;
 - modern scalable vector interface with a permanent hardware-preset header;
+- six selectable, locally remembered colour themes: Classic, tAUREON,
+  Graphite Amber, Arctic, Forest and Plum;
 - live parameter updates from editor to hardware and from hardware to editor;
 - host automation through VST3, tested in Studio One on Windows x64;
 - Push and Pull of the complete edit buffer;
@@ -88,7 +90,7 @@ commercial JUCE licence instead. The bundled Exo font keeps its own
 
 ## Modern CMake build
 
-PreenFM+ 4.0.6 targets JUCE 9.0.0, C++17, VST3 and a standalone plugin host.
+PreenFM+ 4.0.7 targets JUCE 9.0.0, C++17, VST3 and a standalone plugin host.
 JUCE is fetched automatically and pinned to a release tag, so no sibling `JUCE_6.0`
 directory or generated Projucer project is required.
 
@@ -108,7 +110,7 @@ The release artefacts are written below
 
 The `windows-vs2022-x64` presets remain available as a fallback.
 
-Only the CMake-based Windows x64 build is maintained and locally tested for 4.0.6. The
+Only the CMake-based Windows x64 build is maintained and locally tested for 4.0.7. The
 checked-in Projucer, Visual Studio 2019, Linux and macOS projects are legacy
 references and are not release build paths.
 
@@ -131,15 +133,26 @@ addition to its new firmware and GUI support.
 
 ### Engine and operators
 
-![PreenFM+ 4.x Engine page](docs/pfmEditor4_Engine.PNG)
+![PreenFM+ 4.0.7 Engine page in tAUREON colours](docs/themes/taureon-engine.png)
 
 ### Modulation and step sequencers
 
-![PreenFM+ 4.x Modulation page](docs/pfmEditor4_Modulation.PNG)
+![PreenFM+ 4.0.7 Modulation page in tAUREON colours](docs/themes/taureon-modulation.png)
 
 ### Filter, arpeggiator and note scaling
 
-![PreenFM+ 4.x Filter and Arpeggiator page](docs/pfmEditor4_ArpFilter.PNG)
+![PreenFM+ 4.0.7 Filter and Arpeggiator page in tAUREON colours](docs/themes/taureon-arp-filter.png)
+
+These are actual offline renders of the editor, not hardware-session captures.
+The header therefore shows an unconfirmed/offline hardware protocol state.
+
+### Colour themes
+
+Select a theme in the permanent header. The selection is stored locally, not
+in a hardware patch or DAW session. An already open second instance keeps its
+own theme; newly opened processors use the last locally saved selection.
+Carrier/modulator and modulation-index colours retain their functional meaning.
+See [all five new palettes and screenshots](docs/COLOUR_THEMES.md).
 
 For questions about the original PreenFM ecosystem, see the
 [PreenFM forum](https://ixox.fr/forum/index.php?topic=69349.0) and the
