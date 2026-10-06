@@ -104,7 +104,7 @@ public:
         storeButton.setButtonText(TRANS("Store"));
         storeButton.setEnabled(false);
         storeButton.setTooltip(TRANS(
-            "Write the current patch into the selected slot (firmware 3.00 alpha)"));
+            "Write the current patch into the selected slot (editor protocol v1 firmware)"));
         storeButton.onClick = [this] { confirmAndStore(); };
         addAndMakeVisible(storeButton);
 
@@ -113,6 +113,14 @@ public:
             "Ask the hardware which bank and preset it is currently on"));
         positionButton.onClick = [this] { processor.requestHardwarePosition(); };
         addAndMakeVisible(positionButton);
+
+        mpeToggle.setButtonText("MPE");
+        mpeToggle.setTooltip("Preserve performance MIDI channels for MPE. Enable the hardware zone first. "
+            "Editor channel = MPE manager = MIDI channel of the MPE timbre. "
+            "Configure zone and bend range on hardware/controller: host RPN/NRPN configuration is blocked for PreenFM2.");
+        mpeToggle.setToggleState(processor.isMpeEnabled(), dontSendNotification);
+        mpeToggle.onClick = [this] { processor.setMpeEnabled(mpeToggle.getToggleState()); };
+        addAndMakeVisible(mpeToggle);
 
         configureInfo(targetInfoLabel);
         configureInfo(positionInfoLabel);
@@ -167,6 +175,7 @@ public:
         storeButton.setBounds(x, 5, 58, controlHeight);
         x += 58 + gap;
         positionButton.setBounds(x, 5, 72, controlHeight);
+        mpeToggle.setBounds(x + 84, 5, 82, controlHeight);
 
         const int secondRowY = 34;
         const int available = getWidth() - margin * 2;
@@ -251,8 +260,12 @@ private:
 
     void timerCallback() override
     {
+        mpeToggle.setToggleState(processor.isMpeEnabled(), dontSendNotification);
+        mpeToggle.setEnabled(!processor.isHardwareBusy());
         const int revision = processor.getProtocolRevision();
-        if (revision != lastSeenRevision) {
+        const auto suppressed = processor.getSuppressedConfigurationCount();
+        if (revision != lastSeenRevision || suppressed != lastSuppressedConfigurationCount) {
+            lastSuppressedConfigurationCount = suppressed;
             lastSeenRevision = revision;
             refreshFromProcessor();
         }
@@ -282,7 +295,8 @@ private:
             dontSendNotification);
 
         const String operation = processor.getLastOperationText();
-        operationLabel.setText(operation, dontSendNotification);
+        operationLabel.setText(operation + (lastSuppressedConfigurationCount > 0
+            ? " Host RPN/NRPN configuration blocked (set MPE on hardware)." : ""), dontSendNotification);
 
         const bool busy = processor.isHardwareBusy();
         // Store and Load are locked against double clicks and against each
@@ -302,7 +316,7 @@ private:
         else {
             storeButton.setTooltip(processor.isStoreSupported()
                 ? TRANS("Write the current patch into the selected slot")
-                : TRANS("Needs firmware 3.00 alpha with Receives: NRPN or CC & NRPN"));
+                : TRANS("Needs editor protocol v1 firmware with Receives: NRPN or CC & NRPN"));
         }
     }
 
@@ -321,6 +335,8 @@ private:
     TextButton loadButton;
     TextButton storeButton;
     TextButton positionButton;
+    ToggleButton mpeToggle;
+    uint64_t lastSuppressedConfigurationCount = 0;
     int lastSeenRevision = -1;
 };
 
@@ -372,7 +388,9 @@ MainTabs::MainTabs ()
 
     midiChannelCombo.reset (new ComboBox ("Midi Channel"));
     addAndMakeVisible (midiChannelCombo.get());
-    midiChannelCombo->setTooltip (TRANS("Midi Channel"));
+    midiChannelCombo->setTooltip ("Editor/control channel. In normal mode, performance MIDI uses this channel too. "
+        "With MPE enabled, performance channels are preserved. Editor channel must equal both "
+        "the MPE manager and the MIDI channel of the MPE timbre.");
     midiChannelCombo->setEditableText (false);
     midiChannelCombo->setJustificationType (Justification::centred);
     midiChannelCombo->setTextWhenNothingSelected (TRANS("1"));

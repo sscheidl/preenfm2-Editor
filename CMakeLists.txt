@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(PreenfmEditor
-    VERSION 4.0.4
+    VERSION 4.0.6
     DESCRIPTION "MIDI editor for the preenfm2 and preenfm3 synthesizers"
     LANGUAGES C CXX)
 
@@ -42,11 +42,21 @@ juce_add_plugin(PreenfmEditor
 
 juce_generate_juce_header(PreenfmEditor)
 
+# JUCE 9's RC generation rule omits Info.txt as an input. In an incremental
+# Windows build a version bump otherwise leaves FileVersion at the old value.
+if(WIN32)
+    get_target_property(preen_rc_directory PreenfmEditor JUCE_GENERATED_SOURCES_DIRECTORY)
+    get_target_property(preen_rc_info PreenfmEditor JUCE_INFO_FILE)
+    add_custom_command(OUTPUT "${preen_rc_directory}/PreenfmEditor_resources.rc"
+        APPEND DEPENDS "${preen_rc_info}")
+endif()
+
 target_sources(PreenfmEditor PRIVATE
     Plugin/Source/ListProperty.cpp
     Plugin/Source/ListProperty.h
     Plugin/Source/MidifiedFloatParameter.cpp
     Plugin/Source/MidifiedFloatParameter.h
+    Plugin/Source/MidiPerformanceRouter.h
     Plugin/Source/Pfm2MidiDevice.cpp
     Plugin/Source/Pfm2MidiDevice.h
     Plugin/Source/PluginEditor.cpp
@@ -116,3 +126,15 @@ target_compile_features(EditorProtocolTests PRIVATE cxx_std_17)
 
 enable_testing()
 add_test(NAME EditorProtocolTests COMMAND EditorProtocolTests)
+
+add_executable(MidiRoutingTests EXCLUDE_FROM_ALL Plugin/Tests/MidiRoutingTests.cpp)
+target_compile_features(MidiRoutingTests PRIVATE cxx_std_17)
+add_test(NAME MidiRoutingTests COMMAND MidiRoutingTests)
+
+add_executable(MpeProcessorTests EXCLUDE_FROM_ALL Plugin/Tests/MpeProcessorTests.cpp)
+target_compile_features(MpeProcessorTests PRIVATE cxx_std_17)
+target_link_libraries(MpeProcessorTests PRIVATE PreenfmEditor)
+target_include_directories(MpeProcessorTests PRIVATE $<TARGET_PROPERTY:PreenfmEditor,INCLUDE_DIRECTORIES>)
+target_compile_definitions(MpeProcessorTests PRIVATE $<TARGET_PROPERTY:PreenfmEditor,COMPILE_DEFINITIONS>)
+add_dependencies(MpeProcessorTests PreenfmEditor)
+add_test(NAME MpeProcessorTests COMMAND MpeProcessorTests)

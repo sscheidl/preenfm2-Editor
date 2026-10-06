@@ -13,6 +13,18 @@ The PreenFM2 test unit running the hardware-tested 3.00-alpha developer firmware
 
 ## Current features
 
+**Latest pre-release: [4.0.6 Beta 1](https://github.com/sscheidl/preenfm2-Editor/releases/tag/v4.0.6-beta.1).**
+Adds opt-in MPE performance-channel routing and fixes from the independent 4.0.5
+prototype review. The new binaries are locally tested, but their hardware and
+Studio One validation is still pending. The older 4.0.4 beta's successful tests
+do not constitute validation of this MPE extension.
+
+For PreenFM2, raw host RPN/NRPN configuration is blocked for safety. Set the MPE
+zone and bend range on the hardware/controller; editor channel, MPE manager and
+the configured channel of the MPE timbre must match. Native VST3 Note Expression
+and CVIN firmware matrix layouts are not supported. See the
+[MPE setup, safeguards and hardware test checklist](docs/MPE_EDITOR_IMPLEMENTATION.md).
+
 - complete Engine, Modulation, Arpeggiator, Filter and Note Scaling editing;
 - modern scalable vector interface with a permanent hardware-preset header;
 - live parameter updates from editor to hardware and from hardware to editor;
@@ -76,7 +88,7 @@ commercial JUCE licence instead. The bundled Exo font keeps its own
 
 ## Modern CMake build
 
-PreenFM+ 4.0.4 targets JUCE 9.0.0, C++17, VST3 and a standalone plugin host.
+PreenFM+ 4.0.6 targets JUCE 9.0.0, C++17, VST3 and a standalone plugin host.
 JUCE is fetched automatically and pinned to a release tag, so no sibling `JUCE_6.0`
 directory or generated Projucer project is required.
 
@@ -96,7 +108,7 @@ The release artefacts are written below
 
 The `windows-vs2022-x64` presets remain available as a fallback.
 
-Only the CMake-based Windows x64 build is maintained and tested for 4.0.4. The
+Only the CMake-based Windows x64 build is maintained and locally tested for 4.0.6. The
 checked-in Projucer, Visual Studio 2019, Linux and macOS projects are legacy
 references and are not release build paths.
 

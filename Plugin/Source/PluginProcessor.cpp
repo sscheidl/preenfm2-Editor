@@ -526,6 +526,7 @@ Pfm2AudioProcessor::Pfm2AudioProcessor()
 Pfm2AudioProcessor::~Pfm2AudioProcessor()
 {
     stopTimer();
+    releaseResources();
     pfm2MidiDevice->removeListener(this);
     cancelPendingUpdate();
     // Releasing here is mandatory: the transaction claim lives in the shared
@@ -601,8 +602,49 @@ void Pfm2AudioProcessor::prepareToPlay(double, int)
 
 void Pfm2AudioProcessor::releaseResources()
 {
-    // When playback stops, you can use this as an opportunity to free up any
-    // spare memory, etc.
+    const auto send = [this](const uint8_t* data, int size, int channel) {
+        return pfm2MidiDevice->queueMidiMessage(data, size, channel);
+    };
+    if (performanceRouter.configure(isMpeEnabled(), currentMidiChannel.load(),
+            pfm2MidiDevice->getDeviceGeneration(), send))
+        performanceRouter.release(send);
+}
+
+void Pfm2AudioProcessor::setMpeEnabled(bool enabled, bool notifyHost)
+{
+    if (mpeEnabled.exchange(enabled, std::memory_order_relaxed) != enabled) {
+        markProtocolContextChanged();
+        if (notifyHost)
+            updateHostDisplay(ChangeDetails{}.withNonParameterStateChanged(true));
+    }
+}
+
+void Pfm2AudioProcessor::markProtocolContextChanged() noexcept {
+    protocolContextChanged.store(true, std::memory_order_release);
+    requestEditorStateUpdate();
+}
+
+void Pfm2AudioProcessor::setControlChannel(int channel) noexcept {
+    channel = jlimit(1, 16, channel);
+    if (currentMidiChannel.exchange(channel, std::memory_order_relaxed) != channel)
+        markProtocolContextChanged();
+}
+
+void Pfm2AudioProcessor::invalidateProtocolContext() {
+    if (transactionToken != Pfm2MidiDevice::invalidTransactionToken)
+        abandonTransactionForDeviceChange();
+    editorProtocolState = EditorProtocolState::unknown;
+    editorProtocolVersion = editorCapabilities = 0;
+    capabilityVersionSeen = false;
+    reportedBank = reportedPreset = 0;
+    reportedPositionValid = false;
+    noteProtocolChange("MIDI routing changed. Checking hardware protocol again...");
+}
+
+void Pfm2AudioProcessor::processBlockBypassed(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) {
+    buffer.clear();
+    releaseResources();
+    midiMessages.clear();
 }
 
 
@@ -613,9 +655,15 @@ void Pfm2AudioProcessor::processBlock(AudioSampleBuffer& buffer, MidiBuffer& mid
 
     const int outputChannel = jlimit(1, 16,
         currentMidiChannel.load(std::memory_order_relaxed));
-    for (const auto metadata : midiMessages) {
-        pfm2MidiDevice->queueMidiMessage(
-            metadata.data, metadata.numBytes, outputChannel);
+    const auto send = [this](const uint8_t* data, int size, int channel) {
+        return pfm2MidiDevice->queueMidiMessage(data, size, channel,
+            pfmType.load(std::memory_order_relaxed) == 1);
+    };
+    if (performanceRouter.configure(isMpeEnabled(), outputChannel,
+            pfm2MidiDevice->getDeviceGeneration(), send)) {
+        for (const auto metadata : midiMessages) {
+            performanceRouter.forward(metadata.data, metadata.numBytes, send);
+        }
     }
 
     midiMessages.clear();
@@ -667,7 +715,9 @@ AudioProcessorEditor* Pfm2AudioProcessor::createEditor()
 
 
 void Pfm2AudioProcessor::setPfmType(int pt) {
-    pfmType = jlimit(1, 2, pt);
+    pt = jlimit(1, 2, pt);
+    if (pfmType.exchange(pt, std::memory_order_relaxed) != pt)
+        markProtocolContextChanged();
     auto* messageManager = MessageManager::getInstanceWithoutCreating();
     if (messageManager != nullptr && messageManager->isThisTheMessageThread()
         && pfm2Editor != nullptr) {
@@ -864,7 +914,7 @@ void Pfm2AudioProcessor::abandonTransactionForDeviceChange() {
         storeOutcomeUnknown = true;
         unknownStoreBank = storeTargetBank;
         unknownStorePreset = storeTargetPreset;
-        noteProtocolChange("Device changed during a store into bank "
+        noteProtocolChange("MIDI routing/device changed during a store into bank "
             + String(storeTargetBank) + ", preset " + String(storeTargetPreset)
             + ". Result unknown - check the hardware before storing again.");
     }
@@ -941,11 +991,16 @@ bool Pfm2AudioProcessor::buildStoreBatch(int storeTargetValue,
     items.push_back({
         static_cast<uint16_t>(PREENFM_EDITOR_NRPN_FIRST + PREENFM_EDITOR_REQ_STORE),
         static_cast<uint16_t>(storeTargetValue) });
+    // Disarm Store even for a controller on another physical MIDI input.
+    // The firmware ignores page-4 response addresses, including LSB 127.
+    items.push_back({ static_cast<uint16_t>(PREENFM_EDITOR_NRPN_LAST), 0 });
     return true;
 }
 
 
 void Pfm2AudioProcessor::requestEditorCapabilities() {
+    if (protocolContextChanged.exchange(false, std::memory_order_acq_rel))
+        invalidateProtocolContext();
     if (editorProtocolState == EditorProtocolState::querying) {
         return;
     }
@@ -973,7 +1028,7 @@ void Pfm2AudioProcessor::requestHardwarePosition() {
     }
 
     if (!isPositionQuerySupported()) {
-        noteProtocolChange("Position query needs the 3.00 alpha protocol. "
+        noteProtocolChange("Position query needs editor protocol v1 firmware. "
             "Run Check protocol first.");
         return;
     }
@@ -996,7 +1051,7 @@ void Pfm2AudioProcessor::requestHardwarePosition() {
 
 bool Pfm2AudioProcessor::beginHardwareStore(int bankNumber, int presetNumber) {
     if (!isStoreSupported()) {
-        noteProtocolChange("Store needs firmware 3.00 alpha. "
+        noteProtocolChange("Store needs editor protocol v1 firmware. "
             "Run Check protocol first.");
         return false;
     }
@@ -1273,7 +1328,7 @@ void Pfm2AudioProcessor::serviceEditorProtocolTimeouts(uint32 now) {
         editorProtocolState = EditorProtocolState::unsupported;
         finishEditorTransaction();
         noteProtocolChange("Protocol not detected. Load and Pull still work. "
-            "For Store, the hardware needs firmware 3.00 alpha and "
+            "For Store, the hardware needs editor protocol v1 firmware and "
             "Receives set to NRPN or CC & NRPN.");
     }
 
@@ -1346,6 +1401,7 @@ void Pfm2AudioProcessor::getStateInformation(MemoryBlock& destData)
     xml.setAttribute("presetName", getPresetName().trim());
     xml.setAttribute("HardwarePresetBank", getHardwarePresetBank());
     xml.setAttribute("HardwarePresetNumber", getHardwarePresetNumber());
+    xml.setAttribute("MpeEnabled", isMpeEnabled());
 
     // add some attributes to it..
     const auto& parameterSet = getParameters();
@@ -1406,6 +1462,8 @@ void Pfm2AudioProcessor::setStateInformation(const void* data, int sizeInBytes, 
 
 
         if (xmlState->hasTagName("PreenFM2AppStatus")) {
+            // Older sessions always retain the original single-channel routing.
+            setMpeEnabled(xmlState->getBoolAttribute("MpeEnabled", false), false);
             const auto& parameterSet = getParameters();
 
             setHardwarePresetTarget(
@@ -1452,7 +1510,7 @@ void Pfm2AudioProcessor::setStateInformation(const void* data, int sizeInBytes, 
                 const int restoredPfmType = jlimit(1, 2,
                     roundToInt(midifiedFP->getRealValue()));
                 midifiedFP->setRealValueNoNotification((float)restoredPfmType);
-                pfmType.store(restoredPfmType, std::memory_order_relaxed);
+                setPfmType(restoredPfmType);
             }
 
             // (If pfmType (old preset) or preenfm2) AND NO PlayModepfm2
@@ -1466,7 +1524,7 @@ void Pfm2AudioProcessor::setStateInformation(const void* data, int sizeInBytes, 
             const int restoredMidiChannel = jlimit(1, 16,
                 roundToInt(midifiedFP->getRealValue()));
             midifiedFP->setRealValueNoNotification((float)restoredMidiChannel);
-            currentMidiChannel = restoredMidiChannel;
+            setControlChannel(restoredMidiChannel);
 
             requestEditorStateUpdate();
 
@@ -1605,7 +1663,12 @@ void Pfm2AudioProcessor::hostParameterChanged(int index)
         const int midiChannel = jlimit(1, 16,
             roundToInt(midifiedFP->getRealValue()));
         midifiedFP->setRealValueNoNotification((float)midiChannel);
-        currentMidiChannel = midiChannel;
+        setControlChannel(midiChannel);
+        parameterUpdatedForUI(index);
+        return;
+    }
+    if (index == nrpmIndex[2044]) {
+        setPfmType(roundToInt(midifiedFP->getRealValue()));
         parameterUpdatedForUI(index);
         return;
     }
@@ -1899,11 +1962,11 @@ void Pfm2AudioProcessor::onParameterUpdated(AudioProcessorParameter *parameter) 
             const int midiChannel = jlimit(1, 16,
                 roundToInt(midifiedFP->getRealValue()));
             midifiedFP->setRealValueNoNotification((float)midiChannel);
-            currentMidiChannel = midiChannel;
+            setControlChannel(midiChannel);
         }
         else if (index == nrpmIndex[2044]) {
             // pfm type
-            pfmType = (int)midifiedFP->getRealValue();
+            setPfmType((int)midifiedFP->getRealValue());
         }
         else if (index == nrpmIndex[2047]) {
             // Don't notify host
@@ -2073,6 +2136,8 @@ void Pfm2AudioProcessor::queueIncomingNrpn(int parameter, int value) noexcept {
 }
 
 void Pfm2AudioProcessor::handleAsyncUpdate() {
+    const bool changedContext = protocolContextChanged.exchange(false, std::memory_order_acq_rel);
+    if (changedContext) invalidateProtocolContext();
     for (;;) {
         IncomingNrpnEvent event;
         bool hasEvent = false;
@@ -2091,7 +2156,8 @@ void Pfm2AudioProcessor::handleAsyncUpdate() {
             break;
         }
 
-        handleIncomingNrpn(event.parameter, event.value);
+        // Queued answers belonged to the previous channel/context.
+        if (!changedContext) handleIncomingNrpn(event.parameter, event.value);
     }
 
     if (pendingEditorStateUpdate.exchange(false, std::memory_order_acq_rel)
@@ -2108,6 +2174,7 @@ void Pfm2AudioProcessor::handleAsyncUpdate() {
             currentMidiChannel.load(std::memory_order_relaxed)));
         pfm2Editor->setPresetName(getPresetName());
     }
+    if (changedContext) requestEditorCapabilities();
 }
 
 void Pfm2AudioProcessor::requestEditorStateUpdate() noexcept {

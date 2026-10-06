@@ -23,6 +23,7 @@
 #include <atomic>
 #include <cstdint>
 #include "JuceHeader.h"
+#include "MidiPerformanceRouter.h"
 
 // This class must be used with a SharedResourcePointer so that multiple instance of a plugin use the same port
 class Pfm2MidiDevice : public MidiInputCallback, private Thread
@@ -38,8 +39,11 @@ public:
 	void forceChoseNewDevices();
 	bool queueMidiMessage(const MidiMessage& message) noexcept;
 	bool queueMidiMessage(const uint8_t* messageData, int messageSize,
-		int midiChannelOverride = 0) noexcept;
+		int midiChannelOverride = 0, bool protectPreenfmProtocol = false) noexcept;
 	bool queueNrpn(int midiChannel, int parameter, int value) noexcept;
+	uint64_t getSuppressedConfigurationCount() const noexcept {
+		return suppressedConfigurationMessages.load(std::memory_order_relaxed);
+	}
 	uint64_t getDroppedOutputEventCount() const noexcept {
 		return droppedOutputEvents.load(std::memory_order_relaxed);
 	}
@@ -125,6 +129,7 @@ public:
 
 
 private:
+	friend struct MidiRoutingTestAccess;
 	enum class OutputEventType : uint8_t
 	{
 		midiMessage,
@@ -142,6 +147,7 @@ private:
 		uint8_t midiChannel = 1;
 		uint16_t nrpnParameter = 0;
 		uint16_t nrpnValue = 0;
+		bool protectPreenfmProtocol = false;
 		// Device generation this event was created for.
 		uint32_t deviceGeneration = 0;
 	};
@@ -158,6 +164,32 @@ private:
 	bool dequeueOutputEvent(OutputEvent& event) noexcept;
 	void finishEnqueue(size_t position, OutputQueueCell& cell) noexcept;
 	void sendOutputEvent(const OutputEvent& event);
+	// Called only after the output worker has stopped, or by the worker itself.
+	template <typename Sink> void drainOutputQueue(Sink&& send) {
+		OutputEvent event;
+		while (dequeueOutputEvent(event)) send(event);
+	}
+	template <typename Sink> void emitOutputEvent(const OutputEvent& event, Sink&& send) {
+		if (event.deviceGeneration != deviceGeneration.load(std::memory_order_acquire)) {
+			++undeliveredOutputEvents;
+			return;
+		}
+		if (event.type == OutputEventType::midiMessage) {
+			if (event.protectPreenfmProtocol && isPreenfmConfigurationMessage(
+				event.messageData.data(), event.messageSize)) {
+				++suppressedConfigurationMessages;
+				return;
+			}
+			send(event.messageData.data(), event.messageSize);
+		} else {
+			emitEditorNrpn(event.midiChannel, event.nrpnParameter, event.nrpnValue,
+				[&send](int channel, int cc, int value) {
+					const uint8_t bytes[] = {static_cast<uint8_t>(0xb0 | (channel - 1)),
+						static_cast<uint8_t>(cc), static_cast<uint8_t>(value)};
+					send(bytes, 3);
+				});
+		}
+	}
 	void run() override;
 
 	PropertiesFile* midiPropertyFile;
@@ -172,6 +204,7 @@ private:
 	alignas(64) std::atomic<size_t> outputEnqueuePosition { 0 };
 	alignas(64) std::atomic<size_t> outputDequeuePosition { 0 };
 	std::atomic<uint64_t> droppedOutputEvents { 0 };
+	std::atomic<uint64_t> suppressedConfigurationMessages { 0 };
 	// Dequeued but not delivered: no open device, or stale generation.
 	std::atomic<uint64_t> undeliveredOutputEvents { 0 };
 	// Token of the open editor-protocol transaction, 0 when free.

@@ -2,6 +2,38 @@
 
 This project follows semantic versioning.
 
+## 4.0.6 (pre-release)
+
+- Opt-in saved MPE performance-channel routing; preserve note/expression channels
+  while editor commands use the selected control channel. Host parameter IDs and
+  the 242-parameter list remain unchanged.
+- Remove unsafe editor RPN-Null prefixes. PreenFM2 host RPN/NRPN configuration
+  (CC6/38/96-101) is blocked and reported; configure MPE/bend range on hardware.
+- Disarm the selected Store command inside the atomic batch to prevent later
+  data-entry messages from accidentally storing another slot.
+- Drain pending MIDI output before closing the final device, release owned notes
+  on processor destruction/bypass, and retry rejected note/sustain releases.
+- Invalidate protocol/position state on channel, model and MPE changes; block
+  Store until a fresh protocol confirmation. Notify the host of user MPE changes.
+- Expand routing/processor/GUI construction regression tests and correct PolyAT,
+  firmware-version and host-support documentation. Native VST3 Note Expression,
+  concurrent external controller configuration and CVIN layouts are not supported.
+- Windows x64 VST3/standalone beta; new hardware/Studio One verification pending.
+- Fix incremental Windows resource generation so a version bump updates both
+  binary FileVersion/ProductVersion and the VST3 manifest.
+
+## 4.0.5 (unreleased prototype, superseded by 4.0.6)
+
+- Added a saved MPE routing switch in the hardware header. Performance messages
+  retain their input channels in MPE mode; editor commands keep the selected
+  control channel. Older sessions default to the original single-channel mode.
+- Preserved note-specific PolyAT, pitch bend, pressure, CC74 and RPN bytes.
+- Release tracked notes and sustain on routing changes and instance deactivation.
+- Clear outstanding RPN selection before editor NRPNs in PreenFM2 MPE mode,
+  including every item in the existing atomic Store batch.
+- Added deterministic MIDI routing tests. Hardware/Studio One validation of the
+  new build and Claude Code review are required before publication.
+
 ## 4.0.4 (in development)
 
 - Replaced the modal hardware-preset callout with a permanent two-row header,

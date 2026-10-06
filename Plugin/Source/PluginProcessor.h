@@ -27,6 +27,7 @@
 #include "PreenNrpn.h"
 #include "Pfm2MidiDevice.h"
 #include "MidifiedFloatParameter.h"
+#include "MidiPerformanceRouter.h"
 
 
 
@@ -62,6 +63,7 @@ public:
 	void releaseResources();
 
 	void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages);
+	void processBlockBypassed(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override;
 
 	//==============================================================================
 	AudioProcessorEditor* createEditor();
@@ -74,6 +76,12 @@ public:
 
 	bool acceptsMidi() const;
 	bool producesMidi() const;
+	bool supportsMPE() const override { return true; }
+	bool isMpeEnabled() const noexcept { return mpeEnabled.load(std::memory_order_relaxed); }
+	void setMpeEnabled(bool enabled, bool notifyHost = true);
+	uint64_t getSuppressedConfigurationCount() const noexcept {
+		return pfm2MidiDevice->getSuppressedConfigurationCount();
+	}
 	double getTailLengthSeconds() const;
 
 	//==============================================================================
@@ -151,15 +159,19 @@ public:
 		return editorProtocolState;
 	}
 	bool isStoreSupported() const noexcept {
-		return editorProtocolState == EditorProtocolState::supported
+		return !protocolContextChanged.load(std::memory_order_acquire)
+			&& editorProtocolState == EditorProtocolState::supported
 			&& (editorCapabilities & PREENFM_EDITOR_CAPABILITY_STORE) != 0;
 	}
 	bool isPositionQuerySupported() const noexcept {
-		return editorProtocolState == EditorProtocolState::supported
+		return !protocolContextChanged.load(std::memory_order_acquire)
+			&& editorProtocolState == EditorProtocolState::supported
 			&& (editorCapabilities & PREENFM_EDITOR_CAPABILITY_POSITION_QUERY) != 0;
 	}
 	bool isHardwareBusy() const noexcept {
-		return storeState != HardwareStoreState::idle || positionQueryPending;
+		return storeState != HardwareStoreState::idle || positionQueryPending
+			|| editorProtocolState == EditorProtocolState::querying
+			|| hardwarePresetPullPending.load(std::memory_order_acquire);
 	}
 	// A timed-out store leaves the target in an unknown condition. Storing is
 	// latched off until an explicit position resync, and never retried
@@ -199,6 +211,7 @@ public:
 	}
 
 private:
+	friend struct MidiRoutingTestAccess;
 	static constexpr int maximumPresetNameLength = 12;
 	struct IncomingNrpnEvent
 	{
@@ -214,6 +227,9 @@ private:
 	void timerCallback() override;
 	void clearPendingUiParameterUpdate(int parameterIndex) noexcept;
 	void requestEditorStateUpdate() noexcept;
+	void setControlChannel(int channel) noexcept;
+	void invalidateProtocolContext();
+	void markProtocolContextChanged() noexcept;
 	void sendMidiForParameter(int paramIndex, int nrpnValue);
 	void queueHardwarePresetSelection(int bankNumber, int presetNumber);
 	void requestCurrentHardwarePreset();
@@ -226,6 +242,9 @@ private:
 	String presetName;
 	std::atomic<bool> pendingEditorStateUpdate { false };
 	std::atomic<int> currentMidiChannel { 1 };
+	std::atomic<bool> mpeEnabled { false };
+	MidiPerformanceRouter performanceRouter;
+	std::atomic<bool> protocolContextChanged { false };
 	std::atomic<int> pfmType { 1 };
 	std::atomic<int> hardwarePresetBank { 1 };
 	std::atomic<int> hardwarePresetNumber { 1 };

@@ -17,6 +17,7 @@
 */
 
 #include "Pfm2MidiDevice.h"
+#include "MidiPerformanceRouter.h"
 
 #define MIDI_INPUT "midiInput"
 #define MIDI_OUTPUT "midiOutput"
@@ -92,6 +93,9 @@ Pfm2MidiDevice::Pfm2MidiDevice()
 
 Pfm2MidiDevice::~Pfm2MidiDevice() {
 	stopThread(2000);
+	// A host deactivates the last processor immediately before destroying this
+	// shared resource. Deliver its queued releases before invalidating the port.
+	drainOutputQueue([this](const OutputEvent& event) { sendOutputEvent(event); });
 	resetDevices();
 	delete midiPropertyFile;
 }
@@ -145,7 +149,7 @@ bool Pfm2MidiDevice::queueMidiMessage(const MidiMessage& message) noexcept {
 }
 
 bool Pfm2MidiDevice::queueMidiMessage(const uint8_t* messageData,
-	int messageSize, int midiChannelOverride) noexcept {
+	int messageSize, int midiChannelOverride, bool protectPreenfmProtocol) noexcept {
 	if (messageData == nullptr || messageSize <= 0
 		|| messageSize > static_cast<int>(maximumQueuedMidiMessageBytes)) {
 		++droppedOutputEvents;
@@ -164,6 +168,7 @@ bool Pfm2MidiDevice::queueMidiMessage(const uint8_t* messageData,
 	}
 
 	cell->event.type = OutputEventType::midiMessage;
+	cell->event.protectPreenfmProtocol = protectPreenfmProtocol;
 	cell->event.messageSize = static_cast<uint16_t>(messageSize);
 	std::memcpy(cell->event.messageData.data(), messageData,
 		static_cast<size_t>(messageSize));
@@ -228,6 +233,7 @@ bool Pfm2MidiDevice::dequeueOutputEvent(OutputEvent& event) noexcept {
 	}
 
 	event.type = cell->event.type;
+	event.protectPreenfmProtocol = cell->event.protectPreenfmProtocol;
 	event.deviceGeneration = cell->event.deviceGeneration;
 	if (event.type == OutputEventType::midiMessage) {
 		event.messageSize = cell->event.messageSize;
@@ -247,15 +253,6 @@ bool Pfm2MidiDevice::dequeueOutputEvent(OutputEvent& event) noexcept {
 void Pfm2MidiDevice::sendOutputEvent(const OutputEvent& event) {
 	const ScopedLock lock(messageLock);
 
-	// A batch built for an earlier device must never be finished on a device
-	// the caller never addressed: after a reconnect the same store request
-	// would otherwise write the old patch into the new instrument.
-	if (event.deviceGeneration
-		!= deviceGeneration.load(std::memory_order_acquire)) {
-		++undeliveredOutputEvents;
-		return;
-	}
-
 	if (pfm2MidiOutput == nullptr || pfm2MidiInput == nullptr) {
 		// Queue success is not send success. Counting this makes an
 		// incomplete transfer visible instead of silently dropping it.
@@ -263,21 +260,9 @@ void Pfm2MidiDevice::sendOutputEvent(const OutputEvent& event) {
 		return;
 	}
 
-	if (event.type == OutputEventType::midiMessage) {
-		pfm2MidiOutput->sendMessageNow(MidiMessage(event.messageData.data(),
-			static_cast<int>(event.messageSize), 0.0));
-		return;
-	}
-
-	MidiBuffer nrpnMessages;
-	const int channel = event.midiChannel;
-	const int parameter = event.nrpnParameter;
-	const int value = event.nrpnValue;
-	nrpnMessages.addEvent(MidiMessage::controllerEvent(channel, 99, parameter >> 7), 0);
-	nrpnMessages.addEvent(MidiMessage::controllerEvent(channel, 98, parameter & 0x7f), 0);
-	nrpnMessages.addEvent(MidiMessage::controllerEvent(channel, 6, value >> 7), 0);
-	nrpnMessages.addEvent(MidiMessage::controllerEvent(channel, 38, value & 0x7f), 0);
-	pfm2MidiOutput->sendBlockOfMessagesNow(nrpnMessages);
+	emitOutputEvent(event, [this](const uint8_t* bytes, int size) {
+		pfm2MidiOutput->sendMessageNow(MidiMessage(bytes, size, 0.0));
+	});
 }
 
 void Pfm2MidiDevice::run() {
@@ -537,7 +522,3 @@ void Pfm2MidiDevice::handleIncomingMidiMessage(MidiInput * source, const MidiMes
 void Pfm2MidiDevice::handlePartialSysexMessage(MidiInput*, const uint8*, int, double) {
 
 }
-
-
-
-

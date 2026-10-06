@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="nWJaEw" name="pfmEditor" projectType="audioplug" version="4.0.4"
+<JUCERPROJECT id="nWJaEw" name="pfmEditor" projectType="audioplug" version="4.0.6"
               bundleIdentifier="com.ixox.preenfmEditor" includeBinaryInAppConfig="1"
               buildVST="1" buildVST3="1" buildAU="1" buildRTAS="0" buildAAX="0"
               pluginName="PreenFM+" pluginDesc="PreenFM+ MIDI editor"
@@ -72,6 +72,8 @@
       <FILE id="k3O45T" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="BmYEuQ" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="MPER06" name="MidiPerformanceRouter.h" compile="0" resource="0"
+            file="Source/MidiPerformanceRouter.h"/>
       <FILE id="KrpJW7" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="hqvDuC" name="PluginProcessor.h" compile="0" resource="0"

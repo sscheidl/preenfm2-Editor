@@ -10,7 +10,7 @@ current Visual Studio installation.
 ## Current build
 
 - Product name: PreenFM+
-- Project version: 4.0.4
+- Project version: 4.0.6 (hardware/Studio One retest pending)
 - JUCE: 9.0.0, fetched and pinned by CMake
 - Language level: C++17
 - Windows toolchain: Visual Studio 2026 Build Tools 18.9.0, x64
