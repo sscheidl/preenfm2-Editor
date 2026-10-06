@@ -1,26 +1,31 @@
 # PreenFM+
 
-PreenFM+ 4.0.7 Beta 1 is an experimental Windows x64 VST3 and standalone editor for the
+PreenFM+ 4.x is an experimental Windows x64 VST3 and standalone editor for the
 PreenFM2 and PreenFM3 hardware synthesizers. It combines the complete sound
 editing surface of Xavier Hosxe's original controller with a scalable JUCE 9
 interface, live bidirectional MIDI editing, direct hardware-preset workflow,
 guarded MPE routing and six selectable colour themes.
 
 <p align="center">
-  <img src="docs/themes/taureon-engine.png" alt="PreenFM+ 4.0.7 Engine view with permanent preset header and tAUREON colour theme" width="1200" />
+  <img src="docs/themes/taureon-engine.png" alt="PreenFM+ 4.0.8 Engine view with permanent preset header and tAUREON colour theme" width="1200" />
 </p>
 
-Actual 4.0.7 editor render in the **tAUREON** theme (offline, not a live hardware
-session). [Download the Windows beta](https://github.com/sscheidl/preenfm2-Editor/releases/tag/v4.0.7-beta.1)
+Actual 4.0.8 editor render in the **tAUREON** theme (offline, not a live hardware
+session). [Download the Windows beta](https://github.com/sscheidl/preenfm2-Editor/releases/tag/v4.0.8-beta.1)
 or [explore all colour palettes](docs/COLOUR_THEMES.md).
 
 ## Current features
 
-**Latest pre-release: [4.0.7 Beta 1](https://github.com/sscheidl/preenfm2-Editor/releases/tag/v4.0.7-beta.1).**
-Adds six selectable editor colour themes to the guarded MPE routing and review
-fixes from 4.0.6. The new binaries are locally tested, but their hardware and
-Studio One validation is still pending. The older 4.0.4 beta's successful tests
-do not constitute validation of this MPE extension.
+**Latest pre-release: [4.0.8 Beta 1](https://github.com/sscheidl/preenfm2-Editor/releases/tag/v4.0.8-beta.1).**
+Addresses all five low-priority findings from the
+4.0.7 theme review, improves Arctic contrast and dialog theming, distinguishes
+tAUREON with warm charcoal/gold, and replaces Graphite Amber with muted Graphite Rose.
+
+Includes six selectable editor colour themes and the guarded MPE routing and
+review fixes from 4.0.6. Windows Debug and Release automated tests pass (10,394
+checks each); hardware and Studio One validation of the new binaries and an
+independent review of this fix batch remain pending. The older 4.0.4 beta's
+successful tests do not constitute validation of this MPE extension.
 
 For PreenFM2, raw host RPN/NRPN configuration is blocked for safety. Set the MPE
 zone and bend range on the hardware/controller; editor channel, MPE manager and
@@ -31,7 +36,7 @@ and CVIN firmware matrix layouts are not supported. See the
 - complete Engine, Modulation, Arpeggiator, Filter and Note Scaling editing;
 - modern scalable vector interface with a permanent hardware-preset header;
 - six selectable, locally remembered colour themes: Classic, tAUREON,
-  Graphite Amber, Arctic, Forest and Plum;
+  Graphite Rose, Arctic, Forest and Plum;
 - live parameter updates from editor to hardware and from hardware to editor;
 - host automation through VST3, tested in Studio One on Windows x64;
 - Push and Pull of the complete edit buffer;
@@ -93,7 +98,7 @@ commercial JUCE licence instead. The bundled Exo font keeps its own
 
 ## Modern CMake build
 
-PreenFM+ 4.0.7 targets JUCE 9.0.0, C++17, VST3 and a standalone plugin host.
+PreenFM+ 4.0.8 targets JUCE 9.0.0, C++17, VST3 and a standalone plugin host.
 JUCE is fetched automatically and pinned to a release tag, so no sibling `JUCE_6.0`
 directory or generated Projucer project is required.
 
@@ -113,7 +118,7 @@ The release artefacts are written below
 
 The `windows-vs2022-x64` presets remain available as a fallback.
 
-Only the CMake-based Windows x64 build is maintained and locally tested for 4.0.7. The
+Only the CMake-based Windows x64 build is maintained and locally tested for 4.0.8. The
 checked-in Projucer, Visual Studio 2019, Linux and macOS projects are legacy
 references and are not release build paths.
 
@@ -142,15 +147,15 @@ addition to its new firmware and GUI support.
 
 ### Engine and operators
 
-![PreenFM+ 4.0.7 Engine page in tAUREON colours](docs/themes/taureon-engine.png)
+![PreenFM+ 4.0.8 Engine page in tAUREON colours](docs/themes/taureon-engine.png)
 
 ### Modulation and step sequencers
 
-![PreenFM+ 4.0.7 Modulation page in tAUREON colours](docs/themes/taureon-modulation.png)
+![PreenFM+ 4.0.8 Modulation page in tAUREON colours](docs/themes/taureon-modulation.png)
 
 ### Filter, arpeggiator and note scaling
 
-![PreenFM+ 4.0.7 Filter and Arpeggiator page in tAUREON colours](docs/themes/taureon-arp-filter.png)
+![PreenFM+ 4.0.8 Filter and Arpeggiator page in tAUREON colours](docs/themes/taureon-arp-filter.png)
 
 These are actual offline renders of the editor, not hardware-session captures.
 The header therefore shows an unconfirmed/offline hardware protocol state.

@@ -118,7 +118,7 @@ public:
 	void consumePendingUiParameterUpdates(std::unordered_set<String>& updates);
 	void handleIncomingMidiMessage(MidiInput* source, const MidiMessage &message);
 	void handlePartialSysexMessage(MidiInput* source, const uint8 *messageData, int numBytesSoFar, double timestamp);
-	void choseNewMidiDevice();
+	void choseNewMidiDevice(Component* dialogParent = nullptr);
 	void setHardwarePresetTarget(int bankNumber, int presetNumber) noexcept;
 	void loadHardwarePreset(int bankNumber, int presetNumber);
 

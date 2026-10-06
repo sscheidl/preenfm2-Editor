@@ -18,6 +18,7 @@
 
 #include "Pfm2MidiDevice.h"
 #include "MidiPerformanceRouter.h"
+#include "UI/PreenLookAndFeel.h"
 
 #define MIDI_INPUT "midiInput"
 #define MIDI_OUTPUT "midiOutput"
@@ -284,20 +285,27 @@ void Pfm2MidiDevice::run() {
 }
 
 
-void Pfm2MidiDevice::forceChoseNewDevices() {
+void Pfm2MidiDevice::forceChoseNewDevices(Component* dialogParent) {
 	showErrorMEssage.store(true);
-	choseNewDevices();
+	choseNewDevices(dialogParent);
 }
 
-void Pfm2MidiDevice::choseNewDevices() {
+void Pfm2MidiDevice::choseNewDevices(Component* dialogParent) {
 	if (showErrorMEssage.exchange(false)) {
+		// Own the dialog palette locally: the shared MIDI device must not retain
+		// an editor's LookAndFeel pointer across nested modal-loop callbacks.
+		preenfmLookAndFeel dialogLook;
+		if (dialogParent != nullptr)
+			if (auto* look = dynamic_cast<preenfmLookAndFeel*>(&dialogParent->getLookAndFeel()))
+				dialogLook.setTheme(look->getTheme(), false);
 
 		AlertWindow midiWindow("Where is your preenfm ?",
 			"",
-			AlertWindow::QuestionIcon);
+			AlertWindow::QuestionIcon, dialogParent);
+		midiWindow.setLookAndFeel(&dialogLook);
 
 		Label errorMessage("");
-		errorMessage.setColour(Label::textColourId, Colour::fromRGB(200, 80, 80));
+		errorMessage.setColour(Label::textColourId, dialogLook.findColour(PreenTheme::warningId));
 		errorMessage.setSize(400, 20);
 		midiWindow.addCustomComponent(&errorMessage);
 

@@ -269,13 +269,14 @@ private:
         // own, so the only chance to warn about overwriting a slot is here.
         // Asynchronous, so no modal loop is entered.
         Component::SafePointer<HardwarePresetBrowser> safeThis(this);
-        AlertWindow::showOkCancelBox(MessageBoxIconType::WarningIcon,
+        AlertWindow::showAsync(MessageBoxOptions::makeOptionsOkCancel(MessageBoxIconType::WarningIcon,
             TRANS("Overwrite hardware preset?"),
             TRANS("This overwrites bank ") + String(bank)
                 + TRANS(", preset ") + String(preset)
                 + TRANS(" on the PreenFM immediately. The current editor patch "
                     "is pushed first and then written. This cannot be undone."),
-            TRANS("Store"), TRANS("Cancel"), this,
+            TRANS("Store"), TRANS("Cancel"), nullptr)
+                .withParentComponent(findParentComponentOfClass<AudioProcessorEditor>()),
             ModalCallbackFunction::create(
                 [safeThis, bank, preset](int result) {
                     if (result == 1 && safeThis != nullptr) {
@@ -580,7 +581,7 @@ void MainTabs::buttonClicked (Button* buttonThatWasClicked)
         //[UserButtonCode_deviceButton] -- add your button handler code here..
 		Pfm2AudioProcessor* pfm2Processor = dynamic_cast<Pfm2AudioProcessor*>(audioProcessor);
 		if (pfm2Processor) {
-			pfm2Processor->choseNewMidiDevice();
+			pfm2Processor->choseNewMidiDevice(this);
 		}
         //[/UserButtonCode_deviceButton]
     }

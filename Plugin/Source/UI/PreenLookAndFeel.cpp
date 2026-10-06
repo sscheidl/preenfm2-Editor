@@ -36,6 +36,10 @@ void preenfmLookAndFeel::setTheme(int index, bool persist)
 {
 	themeIndex = jlimit(0, PreenTheme::count - 1, index);
 	palette = PreenTheme::palette(themeIndex);
+	// Apply the JUCE scheme first: it also sets editor/toggle/alert colour IDs.
+	setColourScheme(
+		{ palette.background, palette.surface, palette.surfaceRaised, palette.outline, palette.textPrimary,
+			palette.accent, palette.textPrimary, palette.accent, palette.textPrimary });
 	using namespace PreenTheme;
 	setColour(backgroundId, palette.background);
 	setColour(surfaceId, palette.surface);
@@ -60,10 +64,6 @@ void preenfmLookAndFeel::setTheme(int index, bool persist)
 		appearanceSettings->setValue("theme", themeIndex);
 		appearanceSettings->saveIfNeeded();
 	}
-	setColourScheme(
-		{ palette.background, palette.surface, palette.surfaceRaised, palette.outline, palette.textPrimary,
-			palette.accent, palette.textPrimary, palette.accent, palette.textPrimary });
-
 	setColour(Label::textColourId, palette.textPrimary);
 	setColour(TextButton::buttonColourId, palette.surfaceRaised);
 	setColour(TextButton::buttonOnColourId, palette.accent);
@@ -111,7 +111,8 @@ void preenfmLookAndFeel::drawButtonBackground(Graphics& g, Button& button,
 	if (isDown)
 		fill = fill.darker(0.18f);
 	else if (isHighlighted)
-		fill = fill.brighter(0.10f);
+		fill = button.getToggleState() && palette.background.getBrightness() > 0.6f
+			? fill.darker(0.10f) : fill.brighter(0.10f);
 
 	g.setColour(fill.withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.45f));
 	g.fillRoundedRectangle(bounds, 5.0f);

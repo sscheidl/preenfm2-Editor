@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(PreenfmEditor
-    VERSION 4.0.7
+    VERSION 4.0.8
     DESCRIPTION "MIDI editor for the preenfm2 and preenfm3 synthesizers"
     LANGUAGES C CXX)
 
@@ -97,6 +97,7 @@ target_include_directories(PreenfmEditor PRIVATE
 target_compile_features(PreenfmEditor PRIVATE cxx_std_17)
 
 target_compile_definitions(PreenfmEditor PUBLIC
+    $<$<CONFIG:Debug>:JUCE_LOG_ASSERTIONS=1>
     JUCE_IGNORE_VST3_MISMATCHED_PARAMETER_ID_WARNING=1
     JUCE_MODAL_LOOPS_PERMITTED=1
     JUCE_REPORT_APP_USAGE=0

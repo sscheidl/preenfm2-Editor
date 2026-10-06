@@ -52,6 +52,7 @@ public:
 	Font getComboBoxFont(ComboBox& box) override;
 	void positionComboBoxText(ComboBox& box, Label& label) override;
 private:
+	friend struct ThemeTestAccess;
 	int themeIndex = 0;
 	PreenTheme::Palette palette = PreenTheme::palette(0);
 	std::unique_ptr<PropertiesFile> appearanceSettings;

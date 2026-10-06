@@ -2,6 +2,19 @@
 
 This project follows semantic versioning.
 
+## 4.0.8 (pre-release)
+
+- Address all five low-priority findings from the independent 4.0.7 theme review:
+  guard unattached custom-colour lookups, improve Arctic IM/carrier contrast,
+  apply explicit colour overrides after the JUCE scheme, theme Store/MIDI dialogs,
+  and extend tests through the actual selector, name editor, menus, tab colours,
+  DAW-state serialization and two independent processors.
+- Improve selected-button hover contrast in the light theme.
+- Distinguish tAUREON with near-black/warm charcoal surfaces and gold. Replace
+  Graphite Amber with a muted Graphite Rose accent, preserving saved indices.
+- MIDI dialog changes are limited to parent/theme plumbing; Store confirmation
+  and Cancel return values and hardware operations are unchanged.
+
 ## 4.0.7 (pre-release)
 
 - Add locally remembered editor themes: tAUREON, Graphite Amber, Arctic, Forest

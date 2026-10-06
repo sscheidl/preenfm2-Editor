@@ -15,7 +15,7 @@ struct Palette
 
 inline constexpr int count = 6;
 inline const std::array<const char*, count> names {
-    "Classic", "tAUREON", "Graphite Amber", "Arctic", "Forest", "Plum"
+    "Classic", "tAUREON", "Graphite Rose", "Arctic", "Forest", "Plum"
 };
 
 inline Palette palette(int index)
@@ -23,10 +23,10 @@ inline Palette palette(int index)
     using C = Colour;
     switch (index)
     {
-        case 1: return { C(0xff0b0f13), C(0xff14222b), C(0xff243b45), C(0xff57636b),
-                         C(0xfff0ece3), C(0xffb1bec4), C(0xffc8a15a), C(0xffdfbc7c), C(0xffffc46b) };
+        case 1: return { C(0xff090b0d), C(0xff191a19), C(0xff302d27), C(0xff69604e),
+                         C(0xfff0ece3), C(0xffc0b8a7), C(0xffc8a15a), C(0xffe2bd75), C(0xffffc46b) };
         case 2: return { C(0xff181a1d), C(0xff25282d), C(0xff30343a), C(0xff5a5f67),
-                         C(0xfff3eee4), C(0xffb8b9bd), C(0xffe5ad55), C(0xffffc875), C(0xffffc46b) };
+                         C(0xfff3eee4), C(0xffb8b9bd), C(0xffbd7e7c), C(0xffd7a09b), C(0xffffc46b) };
         case 3: return { C(0xffe9eef2), C(0xfff8fafc), C(0xffdce5eb), C(0xff647789),
                          C(0xff172b3a), C(0xff4e6373), C(0xff356d94), C(0xff285d83), C(0xff865000) };
         case 4: return { C(0xff101916), C(0xff1b2b24), C(0xff263a30), C(0xff536f5f),
@@ -44,5 +44,15 @@ enum ColourIds
     backgroundId = 0x2100000, surfaceId, raisedId, outlineId,
     textId, mutedId, accentId, brightId, warningId
 };
-inline Colour colour(const Component& c, int id) { return c.findColour(id, true); }
+inline Colour colour(const Component& c, int id)
+{
+    // Hidden tab contents and teardown may have no theme LookAndFeel attached.
+    // Never query an unspecified custom ID in JUCE's default LookAndFeel.
+    return c.getLookAndFeel().isColourSpecified(id) ? c.findColour(id, true) : Colour();
+}
+inline Colour carrierOutline(const Component& c)
+{
+    return colour(c, backgroundId).getBrightness() > 0.6f
+        ? Colour(0xff17636a) : Colour(0xff5edbe0);
+}
 }

@@ -2186,8 +2186,8 @@ void Pfm2AudioProcessor::handlePartialSysexMessage(MidiInput*, const uint8*, int
 
 }
 
-void Pfm2AudioProcessor::choseNewMidiDevice() {
-    pfm2MidiDevice->forceChoseNewDevices();
+void Pfm2AudioProcessor::choseNewMidiDevice(Component* dialogParent) {
+    pfm2MidiDevice->forceChoseNewDevices(dialogParent);
 
     // Anything in flight belonged to the previous device generation and has
     // been discarded by the device layer; a store in flight becomes unknown.

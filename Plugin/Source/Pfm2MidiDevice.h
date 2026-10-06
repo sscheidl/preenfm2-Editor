@@ -35,8 +35,8 @@ public:
 	~Pfm2MidiDevice();
 
 	void resetDevices();
-	void choseNewDevices();
-	void forceChoseNewDevices();
+	void choseNewDevices(Component* dialogParent = nullptr);
+	void forceChoseNewDevices(Component* dialogParent = nullptr);
 	bool queueMidiMessage(const MidiMessage& message) noexcept;
 	bool queueMidiMessage(const uint8_t* messageData, int messageSize,
 		int midiChannelOverride = 0, bool protectPreenfmProtocol = false) noexcept;

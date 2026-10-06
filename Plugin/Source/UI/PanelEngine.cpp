@@ -176,7 +176,7 @@ Colour modulationColour(const Component& component, int index)
 {
 	const auto base = modulationConnectionColours[jlimit(0, 5, index)];
 	return PreenTheme::colour(component, PreenTheme::backgroundId).getBrightness() > 0.6f
-		? base.darker(0.65f) : base;
+		? base.darker(0.9f) : base;
 }
 
 class UnifiedAlgorithmDiagram final : public Component
@@ -194,7 +194,7 @@ public:
 		auto area = getLocalBounds().toFloat().reduced(12.0f, 8.0f);
 		const bool isVosim = algorithm >= 28;
 		const Colour carrierFill(0xff17636a);
-		const Colour carrierOutline(0xff5edbe0);
+		const auto carrierOutline = PreenTheme::carrierOutline(*this);
 		const Colour modulatorFill(0xff463064);
 		const Colour modulatorOutline(0xffb482ff);
 		const auto syncConnection = PreenTheme::colour(*this, PreenTheme::textId);
